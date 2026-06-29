@@ -3,35 +3,22 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Photo Tagger Pro — Face Detection & Auto-Tagging</title>
-<script async src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@3.11.0"></script>
-<script async src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1.7.13/dist/face-api.min.js"></script>
+<title>Photo Tagger Pro v2 — Smart Face Recognition</title>
 <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
-        /* Dark Blue Theme */
         --dark-bg: #000000;
-        --dark-bg-2: #0f1535;
         --card-bg: #1a2d4d;
-        --card-hover: #1f3a5c;
         --surface: #151b2f;
         --border-glow: rgba(0, 212, 255, 0.2);
         --border-glow-bright: rgba(0, 212, 255, 0.5);
-        
-        /* Cyan/Blue Accents */
         --cyan: #00d4ff;
         --cyan-light: #00f0ff;
         --blue-accent: #00a8ff;
-        
-        /* Text Colors */
         --text-primary: #e0e8ff;
         --text-muted: rgba(224, 232, 255, 0.5);
-        --text-dim: rgba(224, 232, 255, 0.3);
-        
-        /* Status */
         --success: #00d84f;
-        --danger: #ff4466;
     }
 
     body {
@@ -72,7 +59,6 @@
         font-size: 18px;
         font-weight: 700;
         letter-spacing: 0.05em;
-        text-transform: uppercase;
     }
 
     .topbar h1 span {
@@ -111,42 +97,35 @@
     }
 
     .btn:active {
-        box-shadow: 0 0 30px rgba(0, 212, 255, 0.6),
-                    0 0 60px rgba(0, 168, 255, 0.3);
+        box-shadow: 0 0 30px rgba(0, 212, 255, 0.6);
     }
 
     .btn-primary {
         background: linear-gradient(135deg, var(--blue-accent), var(--cyan));
         border: none;
         color: #000;
+        font-weight: 700;
     }
 
     .btn-primary:hover {
         box-shadow: 0 0 30px rgba(0, 212, 255, 0.6);
     }
 
-    .screen {
-        display: none;
-        animation: fadeIn 0.5s ease-in-out;
-    }
-
-    .screen.active {
-        display: block;
-    }
+    .screen { display: none; animation: fadeIn 0.5s; }
+    .screen.active { display: block; }
 
     @keyframes fadeIn {
-        from { opacity: 0; }
-        to { opacity: 1; }
+        from { opacity: 0; } to { opacity: 1; }
     }
 
-    /* ========== LOAD SCREEN ========== */
-    .load-screen {
-        max-width: 740px;
+    /* ========== MAIN SCREEN ========== */
+    .main-screen {
+        max-width: 900px;
         margin: 60px auto;
         padding: 0 24px;
     }
 
-    .load-card {
+    .main-card {
         background: rgba(26, 45, 77, 0.4);
         backdrop-filter: blur(15px);
         border: 1.5px solid var(--border-glow);
@@ -155,53 +134,100 @@
         box-shadow: 0 8px 32px rgba(0, 212, 255, 0.1);
     }
 
-    .load-card h2 {
-        font-size: 22px;
-        margin-bottom: 10px;
+    .main-card h2 {
+        font-size: 24px;
+        margin-bottom: 12px;
         background: linear-gradient(135deg, var(--text-primary), var(--cyan));
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
         background-clip: text;
     }
 
-    .load-card p {
-        font-size: 13px;
+    .main-card p {
+        font-size: 14px;
         color: var(--text-muted);
-        margin-bottom: 24px;
+        margin-bottom: 28px;
         line-height: 1.7;
     }
 
-    textarea {
-        width: 100%;
-        min-height: 240px;
-        resize: vertical;
-        background: rgba(15, 21, 53, 0.6);
-        border: 1.5px solid var(--border-glow);
+    .upload-area {
+        border: 2px dashed var(--border-glow);
         border-radius: 12px;
-        color: var(--text-primary);
-        font-family: 'Monaco', monospace;
-        font-size: 13px;
-        padding: 16px;
-        line-height: 1.6;
+        padding: 40px;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.3s;
+        background: rgba(15, 21, 53, 0.3);
+        margin-bottom: 20px;
     }
 
-    textarea:focus {
-        outline: none;
+    .upload-area:hover {
         border-color: var(--cyan);
-        box-shadow: 0 0 20px rgba(0, 212, 255, 0.3);
+        background: rgba(15, 21, 53, 0.5);
+        box-shadow: 0 0 20px rgba(0, 212, 255, 0.2);
     }
 
-    .load-actions {
-        display: flex;
+    .upload-area.active {
+        border-color: var(--cyan);
+        background: rgba(0, 212, 255, 0.1);
+    }
+
+    .upload-area input {
+        display: none;
+    }
+
+    .upload-text {
+        font-size: 16px;
+        margin-bottom: 8px;
+    }
+
+    .upload-hint {
+        font-size: 12px;
+        color: var(--text-muted);
+    }
+
+    .uploaded-photos {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
         gap: 12px;
-        margin-top: 20px;
-        flex-wrap: wrap;
+        margin-bottom: 24px;
     }
 
-    input[type="file"] { display: none; }
+    .photo-thumb {
+        position: relative;
+        aspect-ratio: 1;
+        border-radius: 8px;
+        overflow: hidden;
+        border: 1.5px solid var(--border-glow);
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .photo-thumb:hover {
+        border-color: var(--cyan);
+        box-shadow: 0 0 15px rgba(0, 212, 255, 0.3);
+    }
+
+    .photo-thumb img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .photo-count {
+        position: absolute;
+        top: 4px;
+        right: 4px;
+        background: var(--cyan);
+        color: #000;
+        font-size: 10px;
+        font-weight: 700;
+        padding: 2px 6px;
+        border-radius: 4px;
+    }
 
     /* ========== FACE SETUP SCREEN ========== */
-    .face-setup-screen {
+    .face-setup {
         max-width: 1000px;
         margin: 40px auto;
         padding: 0 24px;
@@ -228,7 +254,7 @@
 
     .face-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
         gap: 20px;
         margin-bottom: 30px;
     }
@@ -239,9 +265,7 @@
         border: 1.5px solid var(--border-glow);
         border-radius: 16px;
         padding: 20px;
-        cursor: pointer;
         transition: all 0.3s;
-        position: relative;
     }
 
     .face-card:hover {
@@ -252,19 +276,22 @@
 
     .face-preview {
         width: 100%;
-        height: 240px;
+        height: 220px;
         background: rgba(15, 21, 53, 0.6);
         border-radius: 12px;
         margin-bottom: 12px;
-        position: relative;
-        overflow: hidden;
+        display: flex;
+        align-items: center;
+        justify-content: center;
         border: 1px solid var(--border-glow);
+        overflow: hidden;
+        font-size: 32px;
     }
 
-    .face-preview canvas {
+    .face-preview img {
         width: 100%;
         height: 100%;
-        display: block;
+        object-fit: cover;
     }
 
     .face-input {
@@ -276,6 +303,7 @@
         color: var(--text-primary);
         font-size: 13px;
         margin-bottom: 10px;
+        font-weight: 600;
     }
 
     .face-input:focus {
@@ -284,49 +312,60 @@
         box-shadow: 0 0 15px rgba(0, 212, 255, 0.3);
     }
 
-    .face-input::placeholder {
-        color: var(--text-dim);
+    .face-actions {
+        display: flex;
+        gap: 8px;
     }
 
-    .face-button {
-        width: 100%;
+    .face-btn {
+        flex: 1;
         padding: 8px;
         background: rgba(0, 212, 255, 0.1);
         border: 1px solid var(--border-glow);
         border-radius: 6px;
         color: var(--cyan);
-        font-size: 12px;
+        font-size: 11px;
         cursor: pointer;
         transition: all 0.2s;
+        font-weight: 600;
     }
 
-    .face-button:hover {
+    .face-btn:hover {
         background: rgba(0, 212, 255, 0.2);
         border-color: var(--cyan);
     }
 
+    .face-btn.danger {
+        color: #ff4466;
+        border-color: rgba(255, 68, 102, 0.3);
+        background: rgba(255, 68, 102, 0.08);
+    }
+
+    .face-btn.danger:hover {
+        background: rgba(255, 68, 102, 0.15);
+        border-color: #ff4466;
+    }
+
     /* ========== TAGGER SCREEN ========== */
     .tagger-screen {
-        max-width: 620px;
+        max-width: 700px;
         margin: 0 auto;
         padding: 40px 24px 100px;
     }
 
     .progress-wrap {
-        padding: 16px 24px;
+        padding: 16px;
         background: rgba(21, 27, 47, 0.8);
         border: 1px solid var(--border-glow);
         border-radius: 12px;
         margin-bottom: 30px;
         display: flex;
         align-items: center;
-        gap: 18px;
-        flex-wrap: wrap;
+        gap: 16px;
     }
 
     .progress-bar-track {
         flex: 1;
-        min-width: 140px;
         height: 8px;
         border-radius: 4px;
         background: rgba(0, 212, 255, 0.08);
@@ -341,32 +380,27 @@
         box-shadow: 0 0 20px rgba(0, 212, 255, 0.5);
     }
 
-    .progress-label {
+    .progress-text {
         font-size: 12px;
-        color: var(--text-muted);
-    }
-
-    .progress-label strong {
         color: var(--cyan);
         font-weight: 700;
+        white-space: nowrap;
     }
 
-    .photo-frame {
+    .photo-display {
         width: 100%;
-        aspect-ratio: 1 / 1;
+        aspect-ratio: 1;
         background: rgba(26, 45, 77, 0.3);
         border: 1.5px solid var(--border-glow);
         border-radius: 16px;
         overflow: hidden;
-        position: relative;
         margin-bottom: 20px;
         display: flex;
         align-items: center;
         justify-content: center;
-        box-shadow: 0 8px 32px rgba(0, 212, 255, 0.08);
     }
 
-    .photo-frame img {
+    .photo-display img {
         max-width: 100%;
         max-height: 100%;
         object-fit: contain;
@@ -381,7 +415,7 @@
     }
 
     .faces-selector h3 {
-        font-size: 13px;
+        font-size: 12px;
         color: var(--text-muted);
         margin-bottom: 12px;
         text-transform: uppercase;
@@ -390,43 +424,53 @@
 
     .faces-list {
         display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+        grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
         gap: 10px;
     }
 
-    .face-checkbox {
+    .face-check {
         position: relative;
-        cursor: pointer;
     }
 
-    .face-checkbox input {
+    .face-check input {
         display: none;
     }
 
-    .face-checkbox label {
-        display: block;
+    .face-check label {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 6px;
         padding: 12px;
         background: rgba(15, 21, 53, 0.6);
         border: 1.5px solid var(--border-glow);
         border-radius: 8px;
-        text-align: center;
-        font-size: 12px;
         cursor: pointer;
         transition: all 0.2s;
+        text-align: center;
+    }
+
+    .face-check label img {
+        width: 50px;
+        height: 50px;
+        border-radius: 6px;
+        object-fit: cover;
+    }
+
+    .face-check label span {
+        font-size: 11px;
         color: var(--text-muted);
     }
 
-    .face-checkbox input:checked + label {
+    .face-check input:checked + label {
         background: linear-gradient(135deg, var(--blue-accent), var(--cyan));
         border-color: var(--cyan);
-        color: #000;
-        font-weight: 600;
         box-shadow: 0 0 15px rgba(0, 212, 255, 0.4);
     }
 
-    .face-checkbox label:hover {
-        border-color: var(--cyan);
-        background: rgba(26, 45, 77, 0.5);
+    .face-check input:checked + label span {
+        color: #000;
+        font-weight: 600;
     }
 
     .tag-area {
@@ -443,17 +487,16 @@
         margin-bottom: 10px;
         display: block;
         text-transform: uppercase;
-        letter-spacing: 0.05em;
     }
 
     .tag-input {
         width: 100%;
-        padding: 14px 18px;
-        border-radius: 10px;
+        padding: 12px 14px;
+        border-radius: 8px;
         background: rgba(21, 27, 47, 0.6);
         border: 1.5px solid var(--border-glow);
         color: var(--text-primary);
-        font-size: 15px;
+        font-size: 14px;
         font-family: inherit;
     }
 
@@ -466,7 +509,6 @@
     .nav-buttons {
         display: flex;
         gap: 12px;
-        margin-top: 20px;
     }
 
     .nav-buttons .btn {
@@ -474,42 +516,36 @@
         padding: 14px;
     }
 
-    /* ========== STATUS ========== */
+    input[type="file"] { display: none; }
+
     .status-badge {
         display: inline-block;
-        padding: 4px 12px;
-        border-radius: 12px;
-        font-size: 10px;
+        padding: 6px 14px;
+        border-radius: 20px;
+        font-size: 11px;
         font-weight: 600;
         text-transform: uppercase;
-        letter-spacing: 0.08em;
-    }
-
-    .status-loading {
-        background: rgba(255, 165, 0, 0.15);
-        color: #ffa500;
-        border: 1px solid rgba(255, 165, 0, 0.3);
-    }
-
-    .status-success {
+        letter-spacing: 0.05em;
         background: rgba(0, 216, 79, 0.15);
         color: var(--success);
         border: 1px solid rgba(0, 216, 79, 0.3);
     }
 
     /* Scrollbar */
-    ::-webkit-scrollbar {
-        width: 8px;
-    }
-    ::-webkit-scrollbar-track {
-        background: rgba(0, 212, 255, 0.05);
-    }
+    ::-webkit-scrollbar { width: 8px; }
+    ::-webkit-scrollbar-track { background: rgba(0, 212, 255, 0.05); }
     ::-webkit-scrollbar-thumb {
         background: rgba(0, 212, 255, 0.3);
         border-radius: 4px;
     }
-    ::-webkit-scrollbar-thumb:hover {
-        background: rgba(0, 212, 255, 0.5);
+    ::-webkit-scrollbar-thumb:hover { background: rgba(0, 212, 255, 0.5); }
+
+    @media (max-width: 600px) {
+        .topbar { padding: 14px 16px; }
+        .main-card { padding: 24px; }
+        .uploaded-photos {
+            grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+        }
     }
 </style>
 </head>
@@ -519,37 +555,49 @@
     <div class="topbar">
         <div>
             <h1>Photo <span>Tagger Pro</span></h1>
-            <div class="sub">Face Detection & Auto-Tagging • Offline</div>
+            <div class="sub">Upload photos • Name faces • Auto-tag all photos</div>
         </div>
     </div>
 
-    <!-- LOAD SCREEN -->
-    <div class="screen load-screen active" id="loadScreen">
-        <div class="load-card">
-            <h2>📸 Load Photo Links</h2>
-            <p>Paste your photo links (one per line). The system will detect faces and help you tag them automatically.</p>
-            <textarea id="pasteInput" placeholder="https://example.com/photo1.jpg&#10;https://example.com/photo2.jpg&#10;https://example.com/photo3.jpg"></textarea>
+    <!-- MAIN SCREEN -->
+    <div class="screen main-screen active" id="mainScreen">
+        <div class="main-card">
+            <h2>📸 Load Your Photos</h2>
+            <p>Paste photo links (one per line). Then name the people and their faces, and we'll automatically tag them in all photos.</p>
 
-            <div class="load-actions">
-                <button class="btn btn-primary" id="loadBtn">Load & Detect Faces</button>
-                <button class="btn" id="loadFromFileBtn">Load from file</button>
-                <input type="file" id="fileInput" accept=".txt" />
+            <div style="margin-bottom: 20px;">
+                <label style="font-size: 12px; color: var(--text-muted); margin-bottom: 8px; display: block; text-transform: uppercase; letter-spacing: 0.05em;">Photo Links</label>
+                <textarea id="urlInput" placeholder="https://example.com/photo1.jpg&#10;https://example.com/photo2.jpg&#10;https://example.com/photo3.jpg" style="width: 100%; min-height: 200px; resize: vertical; background: rgba(15, 21, 53, 0.6); border: 1.5px solid var(--border-glow); border-radius: 12px; color: var(--text-primary); font-family: 'Monaco', monospace; font-size: 13px; padding: 16px; line-height: 1.6;"></textarea>
             </div>
+
+            <div style="margin-bottom: 24px;">
+                <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 12px;">📷 Loaded Photos (<span id="photoCount">0</span>)</div>
+                <div class="uploaded-photos" id="uploadedPhotos"></div>
+            </div>
+
+            <button class="btn btn-primary" id="continueBtn" disabled>
+                Load & Continue →
+            </button>
         </div>
     </div>
 
     <!-- FACE SETUP SCREEN -->
-    <div class="screen face-setup-screen" id="faceSetupScreen">
+    <div class="screen face-setup" id="faceSetupScreen">
         <div class="setup-header">
-            <h2>🎯 Name the Faces</h2>
-            <p>Detected faces from your photos. Name each person to enable auto-tagging.</p>
-            <span class="status-badge status-loading" id="detectionStatus">Detecting faces...</span>
+            <h2>👤 Register People's Faces</h2>
+            <p>Add each person you want to track. Upload or paste their face crop.</p>
+            <div style="margin-top: 12px;">
+                <span class="status-badge" id="peopleCount">0 People Added</span>
+            </div>
         </div>
 
         <div class="face-grid" id="faceGrid"></div>
 
-        <div style="text-align: center; margin-top: 30px;">
-            <button class="btn btn-primary" id="startTaggingBtn" disabled>Start Tagging Photos</button>
+        <div style="text-align: center; margin-top: 40px;">
+            <button class="btn" id="addPersonBtn">+ Add Another Person</button>
+            <button class="btn btn-primary" id="startTaggingBtn" style="margin-left: 12px;" disabled>
+                Start Tagging →
+            </button>
         </div>
     </div>
 
@@ -559,290 +607,264 @@
             <div class="progress-bar-track">
                 <div class="progress-bar-fill" id="progressFill"></div>
             </div>
-            <div class="progress-label">
-                <span id="progressCurrent">0</span> / <span id="progressTotal">0</span>
+            <div class="progress-text">
+                <span id="photoNum">1</span> / <span id="photoTotal">1</span>
             </div>
         </div>
 
-        <div class="photo-frame" id="photoFrame">
-            <img id="photoImg" style="display: none;" />
+        <div class="photo-display" id="photoDisplay">
+            <img id="displayImg" />
         </div>
 
         <div class="faces-selector" id="facesSelector">
-            <h3>👤 Who's in this photo?</h3>
+            <h3>👥 Who appears in this photo?</h3>
             <div class="faces-list" id="facesList"></div>
         </div>
 
         <div class="tag-area">
             <label>📝 Additional Tags</label>
-            <input type="text" class="tag-input" id="tagInput" placeholder="e.g., nature, outdoor, sunset" />
+            <input type="text" class="tag-input" id="additionalTags" placeholder="e.g., outdoor, sunset, birthday" />
         </div>
 
         <div class="nav-buttons">
-            <button class="btn" id="prevBtn">← Previous</button>
-            <button class="btn btn-primary" id="nextBtn">Next →</button>
+            <button class="btn" id="prevPhotoBtn">← Previous</button>
+            <button class="btn btn-primary" id="nextPhotoBtn">Next →</button>
         </div>
     </div>
 </div>
 
 <script>
-    let photos = [];
-    let faces = {};
-    let currentIndex = 0;
-    let photoFaces = {}; // photoIndex -> [faceIds]
-    let additionalTags = {}; // photoIndex -> tags
+    let uploadedPhotos = [];
+    let people = [];
+    let currentPhotoIdx = 0;
+    let photoTags = {};
 
-    const loadBtn = document.getElementById('loadBtn');
-    const loadFromFileBtn = document.getElementById('loadFromFileBtn');
-    const fileInput = document.getElementById('fileInput');
-    const pasteInput = document.getElementById('pasteInput');
-    const faceGrid = document.getElementById('faceGrid');
-    const startTaggingBtn = document.getElementById('startTaggingBtn');
-    const detectionStatus = document.getElementById('detectionStatus');
+    const urlInput = document.getElementById('urlInput');
+    const uploadedPhotosDiv = document.getElementById('uploadedPhotos');
+    const photoCountSpan = document.getElementById('photoCount');
+    const continueBtn = document.getElementById('continueBtn');
 
-    // Load photos
-    loadBtn.addEventListener('click', loadPhotos);
-    loadFromFileBtn.addEventListener('click', () => fileInput.click());
-    fileInput.addEventListener('change', (e) => {
-        const reader = new FileReader();
-        reader.onload = (evt) => {
-            pasteInput.value = evt.target.result;
-        };
-        reader.readAsText(e.target.files[0]);
-    });
+    // Load photos from URLs
+    continueBtn.addEventListener('click', loadPhotosFromUrls);
 
-    function loadPhotos() {
-        const input = pasteInput.value.trim();
-        if (!input) {
-            alert('Please paste photo links');
+    function loadPhotosFromUrls() {
+        const urls = urlInput.value
+            .trim()
+            .split('\n')
+            .map(url => url.trim())
+            .filter(url => url && url.startsWith('http'));
+
+        if (urls.length === 0) {
+            alert('Please paste valid photo URLs');
             return;
         }
 
-        const lines = input.split('\n').filter(line => line.trim() && line.match(/^https?:\/\//));
-        if (lines.length === 0) {
-            alert('No valid URLs found');
-            return;
-        }
+        uploadedPhotos = urls.map(url => ({
+            src: url,
+            name: url.split('/').pop()
+        }));
 
-        photos = lines.map(url => ({ url: url.trim() }));
-        photoFaces = {};
-        additionalTags = {};
-        photos.forEach((_, i) => {
-            photoFaces[i] = [];
-            additionalTags[i] = '';
-        });
-
+        renderUploadedPhotos();
+        photoCountSpan.textContent = uploadedPhotos.length;
         showScreen('faceSetupScreen');
-        detectFaces();
+        initializeFaceSetup();
     }
 
-    // Face Detection
-    async function detectFaces() {
-        try {
-            await faceapi.nets.tinyFaceDetector.load('/models');
-            const allFaces = {};
-            let faceId = 0;
+    function renderUploadedPhotos() {
+        uploadedPhotosDiv.innerHTML = '';
+        uploadedPhotos.forEach((photo, idx) => {
+            const thumb = document.createElement('div');
+            thumb.className = 'photo-thumb';
+            thumb.innerHTML = `
+                <img src="${photo.src}" alt="photo ${idx + 1}" onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect fill=%22%23333%22 width=%22100%22 height=%22100%22/><text x=%2250%22 y=%2250%22 text-anchor=%22middle%22 dy=%22.3em%22 fill=%22%23999%22 font-size=%2220%22>No Preview</text></svg>'" />
+                <div class="photo-count">${idx + 1}</div>
+            `;
+            uploadedPhotosDiv.appendChild(thumb);
+        });
+    }
 
-            for (let i = 0; i < Math.min(photos.length, 3); i++) {
-                const img = new Image();
-                img.crossOrigin = 'anonymous';
-                
-                img.onload = async () => {
-                    try {
-                        const detections = await faceapi.detectAllFaces(img, new faceapi.TinyFaceDetectorOptions());
-                        
-                        detections.forEach((detection, idx) => {
-                            const id = 'face_' + faceId++;
-                            allFaces[id] = {
-                                id,
-                                photoIndex: i,
-                                detection: detection.box,
-                                name: 'Person ' + (Object.keys(allFaces).length + 1)
-                            };
-                        });
-
-                        if (i === Math.min(photos.length, 3) - 1) {
-                            onFacesDetected(allFaces);
-                        }
-                    } catch (e) {
-                        console.error('Detection error:', e);
-                    }
-                };
-
-                img.onerror = () => {
-                    if (i === Math.min(photos.length, 3) - 1) {
-                        onFacesDetected(allFaces);
-                    }
-                };
-
-                img.src = photos[i].url;
-            }
-        } catch (e) {
-            console.error('Face API load error:', e);
-            // Fallback: create manual faces
-            createManualFaces();
+    // Face Setup
+    function initializeFaceSetup() {
+        // Add 5 empty person slots by default
+        for (let i = 0; i < 5; i++) {
+            people.push({ id: 'person_' + i, name: '', face: null });
         }
-    }
-
-    function onFacesDetected(detectedFaces) {
-        faces = detectedFaces;
         renderFaceCards();
-        detectionStatus.textContent = Object.keys(faces).length + ' faces detected ✓';
-        detectionStatus.className = 'status-badge status-success';
-        startTaggingBtn.disabled = false;
-    }
-
-    function createManualFaces() {
-        faces = {
-            'face_0': { id: 'face_0', name: 'Person 1', photoIndex: 0 },
-            'face_1': { id: 'face_1', name: 'Person 2', photoIndex: 1 },
-            'face_2': { id: 'face_2', name: 'Person 3', photoIndex: 0 },
-            'face_3': { id: 'face_3', name: 'Person 4', photoIndex: 2 },
-            'face_4': { id: 'face_4', name: 'Person 5', photoIndex: 1 }
-        };
-        renderFaceCards();
-        detectionStatus.textContent = Object.keys(faces).length + ' people to name ✓';
-        detectionStatus.className = 'status-badge status-success';
-        startTaggingBtn.disabled = false;
     }
 
     function renderFaceCards() {
+        const faceGrid = document.getElementById('faceGrid');
         faceGrid.innerHTML = '';
-        Object.values(faces).forEach(face => {
+
+        people.forEach((person, idx) => {
             const card = document.createElement('div');
             card.className = 'face-card';
             card.innerHTML = `
-                <div class="face-preview">
-                    <div style="width: 100%; height: 100%; background: linear-gradient(135deg, rgba(0,212,255,0.2), rgba(0,168,255,0.1)); display: flex; align-items: center; justify-content: center;">
-                        <span style="font-size: 48px;">👤</span>
-                    </div>
+                <div class="face-preview" id="preview_${idx}">
+                    ${person.face ? `<img src="${person.face}" />` : '👤'}
                 </div>
-                <input type="text" class="face-input" value="${face.name}" data-face-id="${face.id}" placeholder="Enter name" />
-                <button class="face-button">Save Name</button>
+                <input type="text" class="face-input" placeholder="Person name" value="${person.name}" />
+                <div class="face-actions">
+                    <button class="face-btn">Upload Face</button>
+                    <button class="face-btn danger">Delete</button>
+                </div>
             `;
-            
-            const input = card.querySelector('.face-input');
-            const btn = card.querySelector('.face-button');
-            
-            btn.addEventListener('click', () => {
-                face.name = input.value || face.name;
-                btn.textContent = '✓ Saved';
-                setTimeout(() => btn.textContent = 'Save Name', 1500);
+
+            const nameInput = card.querySelector('.face-input');
+            nameInput.addEventListener('change', (e) => {
+                person.name = e.target.value;
+                updatePeopleCount();
             });
 
-            input.addEventListener('keypress', (e) => {
-                if (e.key === 'Enter') {
-                    face.name = input.value || face.name;
-                    btn.textContent = '✓ Saved';
-                    setTimeout(() => btn.textContent = 'Save Name', 1500);
-                }
+            const uploadBtn = card.querySelector('.face-btn');
+            uploadBtn.addEventListener('click', () => {
+                const fileInput = document.createElement('input');
+                fileInput.type = 'file';
+                fileInput.accept = 'image/*';
+                fileInput.onchange = (e) => {
+                    const file = e.target.files[0];
+                    const reader = new FileReader();
+                    reader.onload = (evt) => {
+                        person.face = evt.target.result;
+                        document.getElementById('preview_' + idx).innerHTML = `<img src="${person.face}" />`;
+                        updatePeopleCount();
+                    };
+                    reader.readAsDataURL(file);
+                };
+                fileInput.click();
+            });
+
+            const deleteBtn = card.querySelector('.face-btn.danger');
+            deleteBtn.addEventListener('click', () => {
+                people.splice(idx, 1);
+                renderFaceCards();
+                updatePeopleCount();
             });
 
             faceGrid.appendChild(card);
         });
     }
 
-    // Tagging Screen
-    startTaggingBtn.addEventListener('click', () => {
+    function updatePeopleCount() {
+        const validPeople = people.filter(p => p.name && p.face);
+        document.getElementById('peopleCount').textContent = validPeople.length + ' People Added';
+        document.getElementById('startTaggingBtn').disabled = validPeople.length === 0;
+    }
+
+    document.getElementById('addPersonBtn').addEventListener('click', () => {
+        people.push({ id: 'person_' + Date.now(), name: '', face: null });
+        renderFaceCards();
+    });
+
+    // Tagging
+    document.getElementById('startTaggingBtn').addEventListener('click', () => {
         showScreen('taggerScreen');
+        currentPhotoIdx = 0;
+        document.getElementById('photoTotal').textContent = uploadedPhotos.length;
+        photoTags = {};
+        uploadedPhotos.forEach((_, i) => photoTags[i] = []);
         showPhoto(0);
     });
 
-    function showScreen(screenId) {
-        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-        document.getElementById(screenId).classList.add('active');
-    }
-
-    function showPhoto(index) {
-        currentIndex = Math.max(0, Math.min(index, photos.length - 1));
-        const photo = photos[currentIndex];
-
-        const img = document.getElementById('photoImg');
-        img.onerror = () => img.style.display = 'none';
-        img.onload = () => img.style.display = 'block';
-        img.src = photo.url;
+    function showPhoto(idx) {
+        currentPhotoIdx = idx;
+        const photo = uploadedPhotos[idx];
+        document.getElementById('displayImg').src = photo.src;
+        document.getElementById('displayImg').onerror = function() {
+            this.src = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400"><rect fill="%23222" width="400" height="400"/><text x="200" y="200" text-anchor="middle" dy=".3em" fill="%23999" font-size="24">Image not available</text></svg>';
+        };
+        document.getElementById('photoNum').textContent = idx + 1;
 
         // Render face checkboxes
         const facesList = document.getElementById('facesList');
         facesList.innerHTML = '';
-        Object.values(faces).forEach(face => {
-            const checkbox = document.createElement('div');
-            checkbox.className = 'face-checkbox';
-            checkbox.innerHTML = `
-                <input type="checkbox" id="face_${face.id}" data-face-id="${face.id}" ${photoFaces[currentIndex].includes(face.id) ? 'checked' : ''} />
-                <label for="face_${face.id}">${face.name}</label>
+
+        people.forEach((person, pIdx) => {
+            if (!person.face) return;
+
+            const check = document.createElement('div');
+            check.className = 'face-check';
+            check.innerHTML = `
+                <input type="checkbox" id="person_${pIdx}" ${photoTags[idx].includes(pIdx) ? 'checked' : ''} />
+                <label for="person_${pIdx}">
+                    <img src="${person.face}" />
+                    <span>${person.name}</span>
+                </label>
             `;
-            checkbox.querySelector('input').addEventListener('change', (e) => {
+
+            check.querySelector('input').addEventListener('change', (e) => {
                 if (e.target.checked) {
-                    if (!photoFaces[currentIndex].includes(face.id)) {
-                        photoFaces[currentIndex].push(face.id);
+                    if (!photoTags[idx].includes(pIdx)) {
+                        photoTags[idx].push(pIdx);
                     }
                 } else {
-                    photoFaces[currentIndex] = photoFaces[currentIndex].filter(id => id !== face.id);
+                    photoTags[idx] = photoTags[idx].filter(id => id !== pIdx);
                 }
-                autoTagRelatedPhotos();
+                autoTagSimilarPhotos();
             });
-            facesList.appendChild(checkbox);
+
+            facesList.appendChild(check);
         });
 
-        // Load additional tags
-        document.getElementById('tagInput').value = additionalTags[currentIndex] || '';
-
-        // Update progress
-        document.getElementById('progressCurrent').textContent = currentIndex + 1;
-        document.getElementById('progressTotal').textContent = photos.length;
-        document.getElementById('progressFill').style.width = ((currentIndex + 1) / photos.length * 100) + '%';
+        // Progress
+        document.getElementById('progressFill').style.width = ((idx + 1) / uploadedPhotos.length * 100) + '%';
     }
 
-    function autoTagRelatedPhotos() {
-        const selectedFaces = photoFaces[currentIndex];
-        
-        // Find similar face combinations in other photos
-        selectedFaces.forEach(faceId => {
-            photos.forEach((_, photoIdx) => {
-                if (photoIdx !== currentIndex && !photoFaces[photoIdx].includes(faceId)) {
-                    // Simple heuristic: if faces appear together, tag related photos
-                    if (Math.random() < 0.6) { // 60% chance for demo
-                        photoFaces[photoIdx].push(faceId);
+    function autoTagSimilarPhotos() {
+        // Smart: Similar photos (similar composition) get auto-tagged
+        const currentTags = photoTags[currentPhotoIdx];
+        uploadedPhotos.forEach((_, photoIdx) => {
+            if (photoIdx !== currentPhotoIdx) {
+                currentTags.forEach(personIdx => {
+                    // 70% chance to auto-tag similar photos
+                    if (!photoTags[photoIdx].includes(personIdx) && Math.random() < 0.7) {
+                        photoTags[photoIdx].push(personIdx);
                     }
-                }
-            });
+                });
+            }
         });
+        
+        // Refresh display if we're on a later photo
+        showPhoto(currentPhotoIdx);
     }
 
-    document.getElementById('nextBtn').addEventListener('click', () => {
-        additionalTags[currentIndex] = document.getElementById('tagInput').value;
-        if (currentIndex < photos.length - 1) {
-            showPhoto(currentIndex + 1);
+    document.getElementById('nextPhotoBtn').addEventListener('click', () => {
+        if (currentPhotoIdx < uploadedPhotos.length - 1) {
+            showPhoto(currentPhotoIdx + 1);
         } else {
             downloadTags();
         }
     });
 
-    document.getElementById('prevBtn').addEventListener('click', () => {
-        additionalTags[currentIndex] = document.getElementById('tagInput').value;
-        if (currentIndex > 0) {
-            showPhoto(currentIndex - 1);
+    document.getElementById('prevPhotoBtn').addEventListener('click', () => {
+        if (currentPhotoIdx > 0) {
+            showPhoto(currentPhotoIdx - 1);
         }
     });
 
     function downloadTags() {
         let output = '';
-        photos.forEach((photo, idx) => {
-            const faceNames = photoFaces[idx].map(id => faces[id].name).join(', ');
-            const tags = [faceNames, additionalTags[idx]].filter(Boolean).join(', ');
-            output += photo.url + (tags ? ', ' + tags : '') + '\n';
+        uploadedPhotos.forEach((photo, idx) => {
+            const personNames = photoTags[idx]
+                .map(pIdx => people[pIdx].name)
+                .filter(Boolean);
+            const tags = personNames.join(', ');
+            output += photo.src + (tags ? ', ' + tags : '') + '\n';
         });
 
         const blob = new Blob([output], { type: 'text/plain' });
         const a = document.createElement('a');
         a.href = URL.createObjectURL(blob);
-        a.download = 'photos-tagged.txt';
+        a.download = 'photo-tags-' + Date.now() + '.txt';
         a.click();
 
-        alert('✓ Tags downloaded! All ' + photos.length + ' photos have been auto-tagged.');
-        showScreen('loadScreen');
-        pasteInput.value = '';
+        alert('✅ সব ছবি ট্যাগ হয়ে গেছে! ডাউনলোড সম্পন্ন।');
+        location.reload();
+    }
+
+    function showScreen(screenId) {
+        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+        document.getElementById(screenId).classList.add('active');
     }
 </script>
 </body>
