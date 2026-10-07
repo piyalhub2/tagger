@@ -1,780 +1,1357 @@
 <!DOCTYPE html>
-<html lang="bn">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Photo Tagger — Tonir Shaik</title>
+<title>Authenticator — Tonir Shaik</title>
+<meta name="robots" content="noindex, nofollow">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" onload="this.onload=null;this.rel='stylesheet'">
-<noscript><link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet"></noscript>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,500;9..144,600&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/fontawesome.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/solid.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/brands.min.css">
 <style>
-    :root {
-        --accent: #3FA8FF;
-        --accent-light: #7FCBFF;
-        --accent-dim: rgba(63,168,255,0.15);
-        --surface: #060B14;
-        --card-bg: #0A1220;
-        --card-bg-2: #0D1626;
-        --muted: rgba(255,255,255,0.38);
-        --text: rgba(255,255,255,0.86);
-        --border: rgba(63,168,255,0.18);
-        --done: #57D9A3;
-        --done-dim: rgba(87,217,163,0.15);
-        --skip: rgba(255,255,255,0.28);
-    }
-    * { box-sizing: border-box; }
-    html, body { margin: 0; padding: 0; }
-    body {
-        background: var(--surface);
-        color: var(--text);
-        font-family: 'Inter', sans-serif;
-        min-height: 100vh;
-        overflow-x: hidden;
-    }
-    body::before {
-        content: '';
-        position: fixed; inset: 0; z-index: -1;
-        background:
-            radial-gradient(ellipse 900px 500px at 15% -5%, rgba(63,168,255,0.10), transparent 60%),
-            radial-gradient(ellipse 700px 500px at 100% 10%, rgba(127,203,255,0.06), transparent 60%);
-    }
-    ::selection { background: var(--accent-dim); color: var(--accent-light); }
+  :root{
+    --bg:#0A0D13;
+    --surface:rgba(255,255,255,0.035);
+    --surface-solid:#141922;
+    --border:rgba(255,255,255,0.09);
+    --border-strong:rgba(255,255,255,0.18);
+    --gold:#CFA968;
+    --gold-soft:rgba(207,169,104,0.14);
+    --cyan:#5FD8CF;
+    --cyan-soft:rgba(95,216,207,0.13);
+    --text:#EEF1F6;
+    --text-dim:#8D97AA;
+    --danger:#E2685F;
+    --mono:'JetBrains Mono', monospace;
+    --ease:cubic-bezier(.16,.8,.24,1);
+    --neon-red:#ff4d6d;
+    --neon-red-soft:rgba(255,77,109,0.32);
+    --neon-red-strong:rgba(255,77,109,0.55);
+    --neon-cyan-soft:rgba(95,216,207,0.32);
+    --neon-cyan-strong:rgba(95,216,207,0.55);
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--bg);
+    color:var(--text);
+    font-family:'Inter',sans-serif;
+    min-height:100vh;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    padding:40px 16px;
+  }
+  a{color:inherit;text-decoration:none;}
 
-    /* ---- Top bar / frame counter (film-strip motif) ---- */
-    .topbar {
-        position: sticky; top: 0; z-index: 20;
-        background: rgba(6,11,20,0.86);
-        backdrop-filter: blur(14px);
-        border-bottom: 1px solid var(--border);
-        padding: 14px 22px;
-        display: flex; align-items: center; justify-content: space-between;
-        gap: 16px; flex-wrap: wrap;
-    }
-    .brand {
-        font-family: 'Cormorant Garamond', serif;
-        font-size: 21px; font-weight: 600; letter-spacing: 0.3px;
-        display: flex; align-items: baseline; gap: 8px;
-    }
-    .brand em { font-style: italic; color: var(--accent-light); }
-    .frame-counter {
-        font-family: 'JetBrains Mono', monospace;
-        font-size: 13px; color: var(--accent-light);
-        background: var(--card-bg);
-        border: 1px solid var(--border);
-        border-radius: 6px;
-        padding: 6px 12px;
-        display: flex; align-items: center; gap: 8px;
-        letter-spacing: 0.5px;
-    }
-    .frame-counter .sprockets { display: flex; gap: 3px; }
-    .frame-counter .sprockets span {
-        width: 3px; height: 10px; background: var(--border); border-radius: 1px;
-    }
-    .progress-rail {
-        position: relative; height: 3px; width: 100%;
-        background: rgba(63,168,255,0.08);
-        border-radius: 2px; overflow: hidden;
-        margin-top: 10px;
-    }
-    .progress-fill {
-        position: absolute; inset: 0 auto 0 0; height: 100%; width: 0%;
-        background: linear-gradient(to right, var(--accent), var(--done));
-        transition: width 0.35s ease;
-    }
+  @property --run-angle{
+    syntax:'<angle>';
+    inherits:false;
+    initial-value:0deg;
+  }
 
-    .shell { max-width: 1180px; margin: 0 auto; padding: 28px 22px 80px; }
+  .auth-wrap{
+    max-width:430px;
+    width:100%;
+    margin:24px auto 0;
+    background:linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0) 40%), var(--surface-solid);
+    border:1px solid var(--border);
+    border-radius:20px;
+    padding:34px 30px 30px;
+    box-shadow:0 20px 50px rgba(0,0,0,0.45);
+    position:relative;
+    overflow:hidden;
+    transition:border-color 0.3s ease, box-shadow 0.3s ease;
+  }
+  .auth-wrap::before{
+    content:''; position:absolute; top:0; left:0; right:0; height:3px;
+    background:linear-gradient(90deg,var(--cyan),var(--gold));
+    opacity:0.85;
+  }
+  .auth-wrap:hover{ border-color:var(--border-strong); box-shadow:0 24px 60px rgba(0,0,0,0.5); }
+  .auth-title{
+    text-align:center;
+    font-family:'Fraunces',serif;
+    font-size:1.35rem;
+    font-weight:600;
+    margin:0 0 22px;
+    padding-bottom:16px;
+    border-bottom:1px solid var(--border);
+    color:var(--text);
+  }
+  .auth-screen{ display:none; }
+  .auth-screen.active{ display:block; animation:authFade 0.25s ease-in-out; }
+  @keyframes authFade{ from{opacity:0;} to{opacity:1;} }
 
-    /* ---- Load screen ---- */
-    .load-card {
-        background: var(--card-bg);
-        border: 1px solid var(--border);
-        border-radius: 14px;
-        padding: 34px;
-        backdrop-filter: blur(10px);
-        max-width: 780px;
-        margin: 40px auto;
-    }
-    .load-card h1 {
-        font-family: 'Cormorant Garamond', serif;
-        font-weight: 600; font-size: 30px; margin: 0 0 6px;
-        color: #fff;
-    }
-    .load-card h1 em { font-style: italic; color: var(--accent-light); }
-    .load-card p.sub { color: var(--muted); font-size: 14px; margin: 0 0 22px; line-height: 1.6; }
-    .load-card textarea {
-        width: 100%; min-height: 220px; resize: vertical;
-        background: #050810; border: 1px solid var(--border); border-radius: 10px;
-        color: var(--text); font-family: 'JetBrains Mono', monospace; font-size: 12.5px;
-        line-height: 1.6; padding: 14px; outline: none;
-    }
-    .load-card textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-dim); }
-    .load-card .hint {
-        font-size: 12px; color: var(--muted); margin-top: 10px; line-height: 1.7;
-    }
-    .load-card .hint code {
-        background: var(--card-bg-2); padding: 1px 6px; border-radius: 4px;
-        color: var(--accent-light); font-family: 'JetBrains Mono', monospace;
-    }
-    .row { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
-    .btn {
-        font-family: 'Inter', sans-serif; font-size: 13.5px; font-weight: 500;
-        border: 1px solid var(--border); background: var(--accent-dim);
-        color: var(--accent-light); padding: 11px 20px; border-radius: 8px;
-        cursor: pointer; transition: all 0.2s ease;
-    }
-    .btn:hover { background: var(--accent); color: #000; border-color: var(--accent); }
-    .btn.primary { background: var(--accent); color: #000; }
-    .btn.primary:hover { background: var(--accent-light); }
-    .btn.ghost { background: transparent; color: var(--muted); }
-    .btn.ghost:hover { background: var(--card-bg-2); color: var(--text); border-color: var(--border); }
-    .btn.small { padding: 7px 13px; font-size: 12px; }
-    .btn:disabled { opacity: 0.4; cursor: not-allowed; }
-    .file-btn { position: relative; overflow: hidden; }
-    .file-btn input[type=file] {
-        position: absolute; inset: 0; opacity: 0; cursor: pointer;
-    }
+  .auth-pass-wrap{ position:relative; margin-bottom:16px; }
+  .auth-pass-wrap input{
+    width:100%; padding:15px 44px 15px 16px; border:1px solid var(--border);
+    border-radius:12px; box-sizing:border-box; font-size:0.98rem;
+    text-align:center; outline:none; background:var(--bg); color:var(--text); font-family:'Inter',sans-serif;
+  }
+  .auth-pass-wrap input:focus{ border-color:var(--gold); box-shadow:0 0 0 4px var(--gold-soft); }
+  .auth-toggle-eye{
+    position:absolute; right:14px; top:50%; transform:translateY(-50%);
+    cursor:pointer; color:var(--text-dim);
+  }
+  .auth-submit{
+    width:100%; padding:14px; color:var(--text) !important;
+    border:2px solid transparent !important; border-radius:12px; cursor:pointer; font-size:0.98rem;
+    font-weight:700; display:block; margin-top:6px;
+    background-image:
+      linear-gradient(145deg,#0B0D12,#151A22),
+      conic-gradient(from var(--run-angle),
+        transparent 0deg, transparent 250deg,
+        var(--neon-red) 285deg, #fff 313deg, var(--cyan) 330deg,
+        transparent 360deg) !important;
+    background-origin:border-box !important;
+    background-clip:padding-box, border-box !important;
+    box-shadow:
+      -9px 0 22px -7px var(--neon-red-soft),
+       9px 0 22px -7px var(--neon-cyan-soft),
+       0 6px 18px rgba(0,0,0,0.5);
+    animation:neonBreathe 3.6s ease-in-out infinite, runBorder 2.6s linear infinite;
+  }
+  .auth-submit:hover{
+    background-image:
+      linear-gradient(145deg,#11141B,#1B212B),
+      conic-gradient(from var(--run-angle),
+        transparent 0deg, transparent 250deg,
+        var(--neon-red) 285deg, #fff 313deg, var(--cyan) 330deg,
+        transparent 360deg) !important;
+    animation-play-state:paused, running;
+    box-shadow:
+      -13px 0 30px -5px var(--neon-red-strong),
+       13px 0 30px -5px var(--neon-cyan-strong),
+       0 10px 26px rgba(0,0,0,0.55);
+  }
+  .auth-submit:active{
+    box-shadow:
+      -6px 0 16px -6px var(--neon-red-soft),
+       6px 0 16px -6px var(--neon-cyan-soft),
+       0 4px 12px rgba(0,0,0,0.5);
+  }
+  @keyframes neonBreathe{
+    0%,100%{ box-shadow:-9px 0 22px -7px var(--neon-red-soft), 9px 0 22px -7px var(--neon-cyan-soft), 0 6px 18px rgba(0,0,0,0.5); }
+    50%{ box-shadow:-9px 0 28px -5px var(--neon-red-strong), 9px 0 28px -5px var(--neon-cyan-strong), 0 6px 18px rgba(0,0,0,0.5); }
+  }
+  @keyframes runBorder{ to{ --run-angle:360deg; } }
+  .auth-submit i{ text-shadow:0 0 8px currentColor; }
+  .auth-error{ color:var(--danger); font-size:0.82rem; text-align:center; margin-top:10px; min-height:1.1em; }
 
-    /* ---- Workspace ---- */
-    .workspace { display: none; gap: 24px; }
-    .workspace.active { display: grid; grid-template-columns: 1.3fr 1fr; }
-    @media (max-width: 860px) { .workspace.active { grid-template-columns: 1fr; } }
+  .auth-category-grid{ display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+  .auth-cat-btn{
+    padding:18px 10px; border-radius:14px; border:1px solid var(--border);
+    background:var(--surface); cursor:pointer; font-weight:600; font-size:0.92rem;
+    text-align:center; color:var(--text);
+    display:flex; align-items:center; justify-content:center; gap:9px;
+    transition:border-color 0.2s var(--ease), background 0.2s var(--ease), transform 0.2s var(--ease), box-shadow 0.2s var(--ease);
+  }
+  .auth-cat-btn:hover{ border-color:var(--cyan); background:var(--cyan-soft); transform:translateY(-2px); box-shadow:0 10px 26px rgba(95,216,207,0.15); }
+  .auth-cat-btn .fa-envelope{ color:#EA4335; }
+  .auth-cat-btn .fa-facebook{ color:#1877F2; }
+  .auth-cat-btn .fa-instagram{ color:#E4405F; }
+  .auth-cat-btn .fa-tiktok{ color:#E9E9EA; }
+  .auth-cat-btn .fa-cloud{ color:#00A1FF; }
+  .auth-cat-btn .fa-linkedin{ color:#0077B5; }
+  .auth-cat-btn .fa-telegram{ color:#24A1DE; }
+  .auth-cat-btn .fa-btc,
+  .auth-cat-btn .fa-bitcoin{ color:#F0B90B; }
 
-    .stage {
-        background: var(--card-bg); border: 1px solid var(--border); border-radius: 14px;
-        padding: 20px; display: flex; flex-direction: column; gap: 16px;
-    }
-    .stage-photo-wrap {
-        position: relative; border-radius: 10px; overflow: hidden;
-        background: #050810; border: 1px solid var(--border);
-        aspect-ratio: 4/5; display: flex; align-items: center; justify-content: center;
-    }
-    .stage-photo-wrap img { width: 100%; height: 100%; object-fit: contain; }
-    .stage-photo-wrap .broken {
-        color: var(--muted); font-family: 'JetBrains Mono', monospace; font-size: 12px;
-        text-align: center; padding: 20px;
-    }
-    .nav-arrow {
-        position: absolute; top: 50%; transform: translateY(-50%);
-        width: 40px; height: 40px; border-radius: 50%;
-        background: rgba(6,11,20,0.7); border: 1px solid var(--border);
-        color: var(--accent-light); display: flex; align-items: center; justify-content: center;
-        cursor: pointer; font-size: 18px; backdrop-filter: blur(6px);
-        transition: all 0.2s ease;
-    }
-    .nav-arrow:hover { background: var(--accent); color: #000; }
-    .nav-arrow.prev { left: 12px; }
-    .nav-arrow.next { right: 12px; }
+  .auth-back-btn{
+    margin-bottom:14px; cursor:pointer; color:var(--cyan); font-weight:600;
+    display:flex; align-items:center; gap:8px; font-size:0.88rem;
+  }
 
-    .stage-meta {
-        display: flex; justify-content: space-between; align-items: center;
-        font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--muted);
-    }
-    .status-pill {
-        display: inline-flex; align-items: center; gap: 6px;
-        padding: 4px 10px; border-radius: 20px; font-size: 11px;
-        border: 1px solid var(--border);
-    }
-    .status-pill.done { color: var(--done); border-color: rgba(87,217,163,0.35); background: var(--done-dim); }
-    .status-pill.pending { color: var(--skip); }
+  #authCodeContainer{ max-height:430px; overflow-y:auto; padding-right:4px; }
+  #authCodeContainer::-webkit-scrollbar{ width:6px; }
+  #authCodeContainer::-webkit-scrollbar-thumb{ background:var(--border-strong); border-radius:10px; }
 
-    .panel-section h3 {
-        font-family: 'Inter', sans-serif; font-size: 12px; font-weight: 600;
-        text-transform: uppercase; letter-spacing: 1.2px; color: var(--muted);
-        margin: 0 0 10px;
-    }
-    .cat-chips { display: flex; gap: 8px; flex-wrap: wrap; }
-    .cat-chip {
-        font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 500;
-        padding: 9px 16px; border-radius: 8px; border: 1px solid var(--border);
-        background: transparent; color: var(--muted); cursor: pointer;
-        transition: all 0.2s ease;
-    }
-    .cat-chip:hover { border-color: var(--accent); color: var(--accent-light); }
-    .cat-chip.active { background: var(--accent); color: #000; border-color: var(--accent); }
-    .cat-chip .key { opacity: 0.55; font-family: 'JetBrains Mono', monospace; font-size: 10px; margin-left: 5px; }
+  .auth-account-box{
+    background:var(--surface); border:1px solid var(--border); padding:15px 16px;
+    border-radius:14px; margin-bottom:12px; text-align:left; cursor:pointer;
+    transition:0.2s var(--ease);
+  }
+  .auth-account-box:hover{ border-color:var(--gold); transform:translateY(-2px); box-shadow:0 8px 22px rgba(0,0,0,0.25); }
+  .auth-account-box:active{ background:var(--gold-soft); transform:translateY(0); }
+  .auth-account-name{
+    font-family:var(--mono);
+    font-size:0.68rem; font-weight:600; color:var(--text-dim);
+    text-transform:uppercase; letter-spacing:0.05em; display:block; margin-bottom:6px;
+  }
+  .auth-otp-code{
+    font-size:1.9rem; font-weight:700; color:var(--text);
+    letter-spacing:0.12em; font-family:var(--mono);
+  }
+  .auth-progress-bar{ height:5px; background:var(--border); border-radius:10px; margin-top:10px; overflow:hidden; }
+  .auth-progress-fill{ height:100%; background:linear-gradient(90deg,var(--gold),var(--cyan)); width:0%; transition:width 0.1s linear; }
 
-    .tag-input-row { position: relative; }
-    .tag-input {
-        width: 100%; background: #050810; border: 1px solid var(--border);
-        border-radius: 8px; color: var(--text); font-family: 'Inter', sans-serif;
-        font-size: 14.5px; padding: 12px 44px 12px 14px; outline: none;
-    }
-    .tag-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-dim); }
-    .mic-btn {
-        position: absolute; right: 6px; top: 50%; transform: translateY(-50%);
-        width: 32px; height: 32px; border-radius: 50%; border: 1px solid var(--border);
-        background: var(--card-bg-2); color: var(--muted); cursor: pointer;
-        display: flex; align-items: center; justify-content: center;
-    }
-    .mic-btn:hover { border-color: var(--accent); color: var(--accent-light); }
-    .mic-btn.listening { background: var(--accent); color: #000; animation: pulse 1.2s ease-in-out infinite; }
-    @keyframes pulse { 0%,100% { box-shadow: 0 0 0 0 var(--accent-dim); } 50% { box-shadow: 0 0 0 8px transparent; } }
+  .auth-add-btn{
+    display:flex; align-items:center; justify-content:center; gap:8px;
+    padding:13px; margin-bottom:14px; border-radius:12px;
+    border:1px dashed var(--border-strong); color:var(--cyan);
+    font-weight:600; font-size:0.9rem; cursor:pointer;
+    transition:0.2s var(--ease);
+  }
+  .auth-add-btn:hover{ background:var(--cyan-soft); border-color:var(--cyan); }
 
-    .jump-row { display: flex; gap: 8px; align-items: center; }
-    .jump-row input {
-        width: 90px; background: #050810; border: 1px solid var(--border); border-radius: 8px;
-        color: var(--text); font-family: 'JetBrains Mono', monospace; font-size: 13px;
-        padding: 9px 10px; outline: none; text-align: center;
-    }
-    .jump-row input:focus { border-color: var(--accent); }
-    .kbd-hints {
-        font-size: 11.5px; color: var(--muted); line-height: 2; font-family: 'Inter', sans-serif;
-    }
-    .kbd-hints kbd {
-        font-family: 'JetBrains Mono', monospace; background: var(--card-bg-2);
-        border: 1px solid var(--border); border-radius: 4px; padding: 1px 6px; color: var(--accent-light);
-    }
+  .auth-cat-btn.auth-add-tile{
+    border-style:dashed; border-color:var(--border-strong); color:var(--cyan);
+  }
+  .auth-cat-btn.auth-add-tile:hover{ background:var(--cyan-soft); border-color:var(--cyan); }
+  .auth-cat-btn .fa-key{ color:var(--gold); }
+  .auth-cat-icon-img{
+    width:18px; height:18px; object-fit:contain; border-radius:4px;
+    vertical-align:middle; flex-shrink:0; background:#fff; padding:2px;
+  }
+  #authAddGroupForm{
+    background:var(--surface); border:1px solid var(--border-strong);
+    border-radius:14px; padding:16px; margin-top:14px;
+  }
+  .auth-add-form{
+    background:var(--surface); border:1px solid var(--border-strong);
+    border-radius:14px; padding:16px; margin-bottom:16px;
+  }
+  .auth-add-form input{
+    width:100%; padding:12px 14px; border:1px solid var(--border);
+    border-radius:10px; margin-bottom:10px; font-size:0.92rem;
+    outline:none; background:var(--bg); color:var(--text); font-family:'Inter',sans-serif;
+  }
+  .auth-add-form input:focus{ border-color:var(--gold); box-shadow:0 0 0 4px var(--gold-soft); }
+  .auth-add-form input#authNewSecret{ font-family:var(--mono); letter-spacing:0.04em; }
+  .auth-add-actions{ display:flex; gap:10px; }
+  .auth-add-save, .auth-add-cancel{
+    flex:1; padding:11px; border-radius:10px; border:1px solid var(--border);
+    font-weight:700; font-size:0.88rem; cursor:pointer; font-family:'Inter',sans-serif;
+  }
+  .auth-add-save{ background:linear-gradient(135deg,var(--gold),var(--cyan)); color:#12100A; border:none; }
+  .auth-add-save:disabled{ opacity:0.6; cursor:default; }
+  .auth-add-cancel{ background:transparent; color:var(--text-dim); }
+  .auth-add-cancel:hover{ color:var(--text); border-color:var(--border-strong); }
 
-    .side-panel {
-        background: var(--card-bg); border: 1px solid var(--border); border-radius: 14px;
-        padding: 20px; display: flex; flex-direction: column; gap: 18px;
-    }
+  .auth-copy-alert{
+    position:fixed; top:20px; left:50%; transform:translateX(-50%);
+    background:linear-gradient(135deg,var(--gold),var(--cyan)); color:#12100A; padding:10px 26px;
+    border-radius:50px; font-weight:700; font-size:0.85rem; display:none; z-index:1200;
+    box-shadow:0 8px 24px rgba(0,0,0,0.4);
+  }
 
-    /* ---- Overview strip ---- */
-    .overview-filters { display: flex; gap: 6px; flex-wrap: wrap; }
-    .of-btn {
-        font-size: 11.5px; font-family: 'Inter', sans-serif; padding: 6px 11px;
-        border-radius: 6px; border: 1px solid var(--border); background: transparent;
-        color: var(--muted); cursor: pointer;
-    }
-    .of-btn.active { background: var(--accent-dim); color: var(--accent-light); border-color: var(--accent); }
-    .thumb-grid {
-        display: grid; grid-template-columns: repeat(auto-fill, minmax(52px, 1fr));
-        gap: 6px; max-height: 320px; overflow-y: auto; padding-right: 4px;
-    }
-    .thumb-grid::-webkit-scrollbar { width: 6px; }
-    .thumb-grid::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
-    .thumb-item {
-        position: relative; aspect-ratio: 1; border-radius: 6px; overflow: hidden;
-        cursor: pointer; border: 2px solid transparent; background: #050810;
-    }
-    .thumb-item img { width: 100%; height: 100%; object-fit: cover; display: block; }
-    .thumb-item.current { border-color: var(--accent); }
-    .thumb-item .dot {
-        position: absolute; bottom: 2px; right: 2px; width: 8px; height: 8px; border-radius: 50%;
-        border: 1px solid rgba(0,0,0,0.4);
-    }
-    .thumb-item .dot.single { background: #3FA8FF; }
-    .thumb-item .dot.dual { background: #C98CE8; }
-    .thumb-item .dot.group { background: #FFB454; }
-    .thumb-item .dot.uncategorized { background: rgba(255,255,255,0.25); }
-    .thumb-item .num {
-        position: absolute; top: 1px; left: 2px; font-size: 8px; font-family: 'JetBrains Mono', monospace;
-        color: rgba(255,255,255,0.7); text-shadow: 0 0 2px #000;
-    }
+  @media (prefers-reduced-motion: reduce){
+    .auth-submit, .auth-submit:hover{ animation:none !important; }
+  }
 
-    .export-bar {
-        display: flex; flex-direction: column; gap: 10px;
-        padding-top: 14px; border-top: 1px solid var(--border);
-    }
-    .export-stats {
-        font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--muted);
-        display: flex; justify-content: space-between;
-    }
-    .export-stats b { color: var(--done); }
+  /* ---------- Settings gear button ---------- */
+  .auth-settings-btn{
+    position:absolute; top:16px; right:18px; width:34px; height:34px;
+    border-radius:10px; border:1px solid var(--border); background:var(--surface);
+    color:var(--text-dim); cursor:pointer; display:flex; align-items:center; justify-content:center;
+    font-size:0.95rem; transition:0.2s var(--ease); z-index:6;
+  }
+  .auth-settings-btn:hover{ color:var(--cyan); border-color:var(--cyan); background:var(--cyan-soft); transform:rotate(35deg); }
 
-    textarea.export-preview {
-        width: 100%; min-height: 90px; background: #050810; border: 1px solid var(--border);
-        border-radius: 8px; color: var(--text); font-family: 'JetBrains Mono', monospace;
-        font-size: 11px; padding: 10px; display: none;
-    }
+  /* ---------- Modal overlay (settings / confirm password / edit account) ---------- */
+  .auth-modal-overlay{
+    position:fixed; inset:0; background:rgba(6,8,12,0.68); backdrop-filter:blur(2px);
+    display:none; align-items:center; justify-content:center; z-index:2000; padding:20px;
+  }
+  .auth-modal-box{
+    width:100%; max-width:360px; background:var(--surface-solid); border:1px solid var(--border-strong);
+    border-radius:16px; padding:20px; box-shadow:0 20px 50px rgba(0,0,0,0.5);
+  }
+  .auth-modal-header{ display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; }
+  .auth-modal-header h3{ margin:0; font-family:'Fraunces',serif; font-size:1.08rem; font-weight:600; }
+  .auth-modal-close{ cursor:pointer; color:var(--text-dim); font-size:1rem; padding:4px; }
+  .auth-modal-close:hover{ color:var(--text); }
+  .auth-settings-section-title{
+    font-family:var(--mono); font-size:0.7rem; color:var(--text-dim); text-transform:uppercase;
+    letter-spacing:0.06em; margin-bottom:10px;
+  }
+  .auth-confirm-text{ font-size:0.9rem; color:var(--text-dim); margin-bottom:14px; text-align:center; }
 
-    .toast {
-        position: fixed; bottom: 22px; left: 50%; transform: translateX(-50%) translateY(20px);
-        background: var(--card-bg); border: 1px solid var(--accent); color: var(--accent-light);
-        padding: 10px 20px; border-radius: 8px; font-size: 13px; opacity: 0; pointer-events: none;
-        transition: all 0.25s ease; z-index: 50; font-family: 'Inter', sans-serif;
-    }
-    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+  /* ---------- Swipe-to-reveal (dashboard buttons + account boxes) ---------- */
+  .swipe-item{ position:relative; overflow:hidden; border-radius:14px; }
+  .swipe-actions{
+    position:absolute; top:0; bottom:0; display:flex; align-items:stretch; z-index:1;
+  }
+  .swipe-actions-left{ left:0; }
+  .swipe-actions-right{ right:0; }
+  .swipe-action-btn{
+    border:none; cursor:pointer; color:#fff; font-size:1.05rem;
+    display:flex; align-items:center; justify-content:center;
+    width:64px; height:100%;
+  }
+  .swipe-delete-btn{ background:var(--danger); border-radius:0 14px 14px 0; }
+  .swipe-edit-btn{ background:#4CAF63; border-radius:14px 0 0 14px; }
+  .swipe-content{
+    position:relative; z-index:2; transform:translateX(0); touch-action:pan-y;
+    will-change:transform;
+  }
 
-    @media (prefers-reduced-motion: reduce) {
-        .mic-btn.listening { animation: none !important; }
-        .progress-fill { transition: none !important; }
-    }
+  /* cat-btn swipe wrapper sits inside the grid cell */
+  .auth-category-grid .swipe-item{ min-width:0; }
+  .auth-category-grid .swipe-item .swipe-content.auth-cat-btn{ margin:0; background:var(--surface-solid); }
+
+  .acc-swipe-item{ margin-bottom:12px; }
+  .acc-swipe-item .swipe-content.auth-account-box{ margin-bottom:0; background:var(--surface-solid); }
+
+  /* ---------- Drag handle for reordering account boxes ---------- */
+  .auth-account-name{ padding-right:34px; }
+  .auth-drag-handle{
+    position:absolute; top:6px; right:6px; z-index:3;
+    width:34px; height:34px; display:flex; align-items:center; justify-content:center;
+    color:var(--text-dim); cursor:grab; touch-action:none; border-radius:8px;
+    font-size:1.05rem;
+    transition:color 0.15s ease, background 0.15s ease;
+  }
+  .auth-drag-handle:hover{ color:var(--cyan); background:var(--cyan-soft); }
+  .auth-drag-handle:active{ cursor:grabbing; }
+  .acc-swipe-item.auth-reordering{ overflow:visible; z-index:50; }
+  .acc-swipe-item.auth-reordering .swipe-content{
+    box-shadow:0 16px 34px rgba(0,0,0,0.55);
+    border-radius:14px;
+  }
 </style>
 </head>
 <body>
 
-<div class="topbar">
-    <div class="brand">Photo <em>Tagger</em></div>
-    <div class="frame-counter">
-        <span class="sprockets"><span></span><span></span><span></span></span>
-        <span id="frameCounter">— / —</span>
-    </div>
-</div>
-<div style="max-width:1180px;margin:0 auto;padding:0 22px;">
-    <div class="progress-rail"><div class="progress-fill" id="progressFill"></div></div>
-</div>
+  <div id="authCopyNotice" class="auth-copy-alert">Copied!</div>
 
-<div class="shell">
+  <div class="auth-wrap">
+    <h2 class="auth-title" id="authMainTitle">🔒 Authenticator</h2>
 
-    <!-- ============ LOAD SCREEN ============ -->
-    <div class="load-card" id="loadCard">
-        <h1>Load your <em>photo list</em></h1>
-        <p class="sub">
-            নতুন ফটো ইউআরএল লিস্ট পেস্ট করো, অথবা গ্যালারির পুরনো txt ফাইলের কনটেন্ট
-            (যেটাতে আগের ট্যাগ আছে) পেস্ট করো — আগের ট্যাগ ও ক্যাটাগরি স্বয়ংক্রিয়ভাবে
-            লোড হয়ে যাবে, তুমি বাকিটা চালিয়ে যেতে পারবে।
-        </p>
-        <textarea id="pasteArea" placeholder="https://drive.google.com/file/d/xxxx/view
-https://drive.google.com/file/d/yyyy/view, Rakib রাকিব
-#SINGLE
-https://...
-#DUAL
-https://..."></textarea>
-        <p class="hint">
-            প্রতি লাইনে একটা URL। ঐচ্ছিকভাবে <code>URL, নাম ট্যাগ</code> ফরম্যাটে আগের ট্যাগ থাকতে পারে।
-            <code>#SINGLE</code> / <code>#DUAL</code> / <code>#GROUP</code> হেডার থাকলে সেগুলোও ধরা হবে।
-        </p>
-        <div class="row" style="margin-top:18px;">
-            <button class="btn primary" id="loadBtn">Load photos</button>
-            <button class="btn ghost file-btn">Load backup (.json)
-                <input type="file" id="backupFileInput" accept=".json">
-            </button>
-        </div>
+    <div id="authLockScreen" class="auth-screen active">
+      <div class="auth-pass-wrap">
+        <input type="password" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" id="authMasterPass" placeholder="Enter password..." oninput="authClearError()" onkeydown="if(event.key==='Enter') authTryUnlock()">
+        <span class="auth-toggle-eye" id="authEyeIcon" onclick="authTogglePass()"><i class="fa-solid fa-eye"></i></span>
+      </div>
+      <button id="authSubmitBtn" class="auth-submit" onclick="authTryUnlock()">Submit</button>
+      <div class="auth-error" id="authLockError"></div>
     </div>
 
-    <!-- ============ WORKSPACE ============ -->
-    <div class="workspace" id="workspace">
+    <div id="authMenuScreen" class="auth-screen">
+      <button type="button" class="auth-settings-btn" id="authSettingsBtn" onclick="authOpenSettingsModal()" title="Settings"><i class="fa-solid fa-gear"></i></button>
 
-        <div class="stage">
-            <div class="stage-photo-wrap" id="stagePhotoWrap">
-                <div class="nav-arrow prev" id="prevBtn">‹</div>
-                <img id="stagePhoto" src="" alt="" style="display:none;">
-                <div class="broken" id="brokenMsg" style="display:none;">ছবি লোড হয়নি<br>(লিংক চেক করো)</div>
-                <div class="nav-arrow next" id="nextBtn">›</div>
-            </div>
-            <div class="stage-meta">
-                <span id="catLabel">Uncategorized</span>
-                <span class="status-pill pending" id="statusPill">Untagged</span>
-            </div>
-
-            <div class="panel-section">
-                <h3>Category</h3>
-                <div class="cat-chips">
-                    <button class="cat-chip" data-cat="single">Single <span class="key">1</span></button>
-                    <button class="cat-chip" data-cat="dual">Dual <span class="key">2</span></button>
-                    <button class="cat-chip" data-cat="group">Group <span class="key">3</span></button>
-                    <button class="cat-chip" data-cat="uncategorized">Skip / None <span class="key">0</span></button>
-                </div>
-            </div>
-
-            <div class="panel-section">
-                <h3>Name / Tags</h3>
-                <div class="tag-input-row">
-                    <input type="text" class="tag-input" id="tagInput" placeholder="Rakib রাকিব ...">
-                    <button class="mic-btn" id="micBtn" title="Voice input">🎤</button>
-                </div>
-            </div>
-
-            <div class="panel-section">
-                <h3>Jump to frame</h3>
-                <div class="jump-row">
-                    <input type="number" id="jumpInput" min="1">
-                    <button class="btn small" id="jumpBtn">Go</button>
-                    <button class="btn small primary" id="saveNextBtn" style="margin-left:auto;">Save &amp; next ↵</button>
-                </div>
-            </div>
-
-            <div class="kbd-hints">
-                <kbd>←</kbd> <kbd>→</kbd> navigate &nbsp;·&nbsp; <kbd>1</kbd><kbd>2</kbd><kbd>3</kbd><kbd>0</kbd> set category &nbsp;·&nbsp; <kbd>Enter</kbd> save &amp; next &nbsp;·&nbsp; <kbd>M</kbd> mic
-            </div>
+      <div class="auth-category-grid" id="authCategoryGrid">
+        <div class="swipe-item" data-group="Gmail">
+          <div class="swipe-actions swipe-actions-right"><button class="swipe-action-btn swipe-delete-btn" onclick="authRequestDeleteGroup('Gmail', this)"><i class="fa-solid fa-trash"></i></button></div>
+          <div class="auth-cat-btn swipe-content" onclick="authOpenCategory('Gmail')"><i class="fa-solid fa-envelope"></i> Gmail</div>
         </div>
-
-        <div class="side-panel">
-            <div class="panel-section">
-                <h3>Overview</h3>
-                <div class="overview-filters" style="margin-bottom:10px;">
-                    <button class="of-btn active" data-filter="all">All</button>
-                    <button class="of-btn" data-filter="untagged">Untagged</button>
-                    <button class="of-btn" data-filter="tagged">Tagged</button>
-                    <button class="of-btn" data-filter="single">Single</button>
-                    <button class="of-btn" data-filter="dual">Dual</button>
-                    <button class="of-btn" data-filter="group">Group</button>
-                </div>
-                <div class="thumb-grid" id="thumbGrid"></div>
-            </div>
-
-            <div class="export-bar">
-                <div class="export-stats">
-                    <span>Tagged: <b id="taggedCount">0</b> / <span id="totalCount">0</span></span>
-                    <span id="percentDone">0%</span>
-                </div>
-                <div class="row">
-                    <button class="btn primary small" id="exportTxtBtn">Export .txt</button>
-                    <button class="btn small" id="copyTxtBtn">Copy text</button>
-                </div>
-                <div class="row">
-                    <button class="btn small" id="saveBackupBtn">Save backup .json</button>
-                    <button class="btn ghost small" id="clearBtn">Clear all progress</button>
-                </div>
-                <textarea class="export-preview" id="exportPreview" readonly></textarea>
-            </div>
+        <div class="swipe-item" data-group="Facebook">
+          <div class="swipe-actions swipe-actions-right"><button class="swipe-action-btn swipe-delete-btn" onclick="authRequestDeleteGroup('Facebook', this)"><i class="fa-solid fa-trash"></i></button></div>
+          <div class="auth-cat-btn swipe-content" onclick="authOpenCategory('Facebook')"><i class="fa-brands fa-facebook"></i> Facebook</div>
         </div>
+        <div class="swipe-item" data-group="Instagram">
+          <div class="swipe-actions swipe-actions-right"><button class="swipe-action-btn swipe-delete-btn" onclick="authRequestDeleteGroup('Instagram', this)"><i class="fa-solid fa-trash"></i></button></div>
+          <div class="auth-cat-btn swipe-content" onclick="authOpenCategory('Instagram')"><i class="fa-brands fa-instagram"></i> Instagram</div>
+        </div>
+        <div class="swipe-item" data-group="TikTok">
+          <div class="swipe-actions swipe-actions-right"><button class="swipe-action-btn swipe-delete-btn" onclick="authRequestDeleteGroup('TikTok', this)"><i class="fa-solid fa-trash"></i></button></div>
+          <div class="auth-cat-btn swipe-content" onclick="authOpenCategory('TikTok')"><i class="fa-brands fa-tiktok"></i> TikTok</div>
+        </div>
+        <div class="swipe-item" data-group="Mega">
+          <div class="swipe-actions swipe-actions-right"><button class="swipe-action-btn swipe-delete-btn" onclick="authRequestDeleteGroup('Mega', this)"><i class="fa-solid fa-trash"></i></button></div>
+          <div class="auth-cat-btn swipe-content" onclick="authOpenCategory('Mega')"><i class="fa-solid fa-cloud"></i> Mega</div>
+        </div>
+        <div class="swipe-item" data-group="linkedin">
+          <div class="swipe-actions swipe-actions-right"><button class="swipe-action-btn swipe-delete-btn" onclick="authRequestDeleteGroup('linkedin', this)"><i class="fa-solid fa-trash"></i></button></div>
+          <div class="auth-cat-btn swipe-content" onclick="authOpenCategory('linkedin')"><i class="fa-brands fa-linkedin"></i> LinkedIn</div>
+        </div>
+        <div class="swipe-item" data-group="Telegram">
+          <div class="swipe-actions swipe-actions-right"><button class="swipe-action-btn swipe-delete-btn" onclick="authRequestDeleteGroup('Telegram', this)"><i class="fa-solid fa-trash"></i></button></div>
+          <div class="auth-cat-btn swipe-content" onclick="authOpenCategory('Telegram')"><i class="fa-brands fa-telegram"></i> Telegram</div>
+        </div>
+        <div class="swipe-item" data-group="Binance">
+          <div class="swipe-actions swipe-actions-right"><button class="swipe-action-btn swipe-delete-btn" onclick="authRequestDeleteGroup('Binance', this)"><i class="fa-solid fa-trash"></i></button></div>
+          <div class="auth-cat-btn swipe-content" onclick="authOpenCategory('Binance')"><i class="fa-brands fa-btc"></i> Binance</div>
+        </div>
+      </div>
     </div>
-</div>
 
-<div class="toast" id="toast"></div>
+    <!-- ---------- Settings modal (holds "Add Service") ---------- -->
+    <div id="authSettingsModal" class="auth-modal-overlay">
+      <div class="auth-modal-box">
+        <div class="auth-modal-header">
+          <h3>⚙️ Settings</h3>
+          <span class="auth-modal-close" onclick="authCloseSettingsModal()"><i class="fa-solid fa-xmark"></i></span>
+        </div>
+        <div class="auth-settings-section-title">Add a new service</div>
+        <div id="authAddGroupForm">
+          <input type="text" id="authNewGroupName" placeholder="Service name (e.g. Netflix)" autocapitalize="off" autocorrect="off" spellcheck="false" style="width:100%; padding:12px 14px; border:1px solid var(--border); border-radius:10px; margin-bottom:10px; font-size:0.92rem; outline:none; background:var(--bg); color:var(--text); font-family:'Inter',sans-serif; box-sizing:border-box;">
+          <input type="text" id="authNewGroupAccName" placeholder="Account name (e.g. you@example.com)" autocapitalize="off" autocorrect="off" spellcheck="false" style="width:100%; padding:12px 14px; border:1px solid var(--border); border-radius:10px; margin-bottom:10px; font-size:0.92rem; outline:none; background:var(--bg); color:var(--text); font-family:'Inter',sans-serif; box-sizing:border-box;">
+          <input type="text" id="authNewGroupSecret" placeholder="Secret key" autocapitalize="off" autocorrect="off" spellcheck="false" onkeydown="if(event.key==='Enter') authSaveNewGroup()" style="width:100%; padding:12px 14px; border:1px solid var(--border); border-radius:10px; margin-bottom:10px; font-size:0.92rem; outline:none; background:var(--bg); color:var(--text); font-family:var(--mono); letter-spacing:0.04em; box-sizing:border-box;">
+          <div class="auth-add-actions">
+            <button class="auth-add-save" onclick="authSaveNewGroup()">Save</button>
+            <button class="auth-add-cancel" onclick="authCloseSettingsModal()">Cancel</button>
+          </div>
+          <div class="auth-error" id="authAddGroupError"></div>
+        </div>
+      </div>
+    </div>
 
-<script>
-    const CATS = ['single', 'dual', 'group', 'uncategorized'];
-    const CAT_LABELS = { single: 'Single', dual: 'Dual', group: 'Group', uncategorized: 'Uncategorized' };
-    const STORAGE_KEY = 'phototagger_tags_v1';
+    <!-- ---------- Password confirm modal (used for all deletes) ---------- -->
+    <div id="authPassConfirmModal" class="auth-modal-overlay">
+      <div class="auth-modal-box">
+        <div class="auth-modal-header">
+          <h3 id="authPassConfirmTitle">Confirm delete</h3>
+          <span class="auth-modal-close" onclick="authCloseConfirmModal()"><i class="fa-solid fa-xmark"></i></span>
+        </div>
+        <div class="auth-pass-wrap">
+          <input type="password" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" id="authPassConfirmInput" placeholder="Password" onkeydown="if(event.key==='Enter') authConfirmPassAction()">
+        </div>
+        <div class="auth-error" id="authPassConfirmError"></div>
+        <div class="auth-add-actions">
+          <button class="auth-add-save" onclick="authConfirmPassAction()">Delete</button>
+          <button class="auth-add-cancel" onclick="authCloseConfirmModal()">Cancel</button>
+        </div>
+      </div>
+    </div>
 
-    let photos = [];      // { url, cat, tags }
-    let currentIndex = 0;
-    let overviewFilter = 'all';
+    <!-- ---------- Edit account modal ---------- -->
+    <div id="authEditModal" class="auth-modal-overlay">
+      <div class="auth-modal-box">
+        <div class="auth-modal-header">
+          <h3>Edit account</h3>
+          <span class="auth-modal-close" onclick="authCloseEditModal()"><i class="fa-solid fa-xmark"></i></span>
+        </div>
+        <input type="hidden" id="authEditOldGroup">
+        <input type="hidden" id="authEditOldName">
+        <input type="text" id="authEditName" placeholder="Account name" autocapitalize="off" autocorrect="off" spellcheck="false" style="width:100%; padding:12px 14px; border:1px solid var(--border); border-radius:10px; margin-bottom:10px; font-size:0.92rem; outline:none; background:var(--bg); color:var(--text); font-family:'Inter',sans-serif; box-sizing:border-box;">
+        <input type="text" id="authEditSecret" placeholder="Secret key (re-enter to update)" autocapitalize="off" autocorrect="off" spellcheck="false" onkeydown="if(event.key==='Enter') authSaveEditAccount()" style="width:100%; padding:12px 14px; border:1px solid var(--border); border-radius:10px; margin-bottom:10px; font-size:0.92rem; outline:none; background:var(--bg); color:var(--text); font-family:var(--mono); letter-spacing:0.04em; box-sizing:border-box;">
+        <div class="auth-add-actions">
+          <button class="auth-add-save" onclick="authSaveEditAccount()">Save</button>
+          <button class="auth-add-cancel" onclick="authCloseEditModal()">Cancel</button>
+        </div>
+        <div class="auth-error" id="authEditError"></div>
+      </div>
+    </div>
 
-    // ---- Google Drive link handling (mirrors the main gallery's logic) ----
-    function getDriveFileId(url) {
-        let m = url.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
-        if (m) return m[1];
-        m = url.match(/[?&]id=([a-zA-Z0-9_-]+)/);
-        if (m) return m[1];
-        return null;
+    <div id="authListScreen" class="auth-screen">
+      <div class="auth-back-btn" onclick="authShowMenu()"><i class="fa-solid fa-arrow-left"></i> Back to Menu</div>
+
+      <div id="authAddBtn" class="auth-add-btn" onclick="authShowAddForm()">
+        <i class="fa-solid fa-plus"></i> Add Account
+      </div>
+      <div id="authAddForm" class="auth-add-form" style="display:none;">
+        <input type="text" id="authNewName" placeholder="Account name (e.g. john@gmail.com)" autocapitalize="off" autocorrect="off" spellcheck="false">
+        <input type="text" id="authNewSecret" placeholder="Secret key" autocapitalize="off" autocorrect="off" spellcheck="false" onkeydown="if(event.key==='Enter') authSaveNewAccount()">
+        <div class="auth-add-actions">
+          <button class="auth-add-save" onclick="authSaveNewAccount()">Save</button>
+          <button class="auth-add-cancel" onclick="authHideAddForm()">Cancel</button>
+        </div>
+        <div class="auth-error" id="authAddError"></div>
+      </div>
+
+      <div id="authCodeContainer"></div>
+    </div>
+  </div>
+
+  <script>
+    const API_BASE = "https://tonir-vault-api.tonirshaik.workers.dev";
+
+    async function apiLogin(category, password){
+      let res;
+      try{
+        res = await fetch(`${API_BASE}/login`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ category, password })
+        });
+      }catch(networkErr){
+        const e = new Error('Network error');
+        e.isNetworkError = true;
+        throw e;
+      }
+      const data = await res.json();
+      if(!res.ok){
+        const e = new Error(data.error || 'Login failed');
+        e.status = res.status;
+        e.serverMessage = data.error;
+        throw e;
+      }
+      return data.token;
     }
-    function isGoogleDriveUrl(url) { return /drive\.google\.com/.test(url); }
-    function toRenderableUrl(url) {
-        if (isGoogleDriveUrl(url)) {
-            const id = getDriveFileId(url);
-            if (id) return 'https://drive.google.com/thumbnail?id=' + id + '&sz=w1000';
+
+    function describeAuthError(err, stage){
+      if(err.isNetworkError){
+        return 'Network error — could not reach the server (check WiFi/DNS)';
+      }
+      if(err.status === 429){
+        return err.serverMessage || 'Too many attempts, please try again in a moment.';
+      }
+      return 'Incorrect password';
+    }
+
+    let authToken = null;
+    let authActiveGroup = null;
+    let authTimerStarted = false;
+    let authLastRenderedData = null;
+    let authProgressEls = {};
+    let authProgressTimer = null;
+
+    function escapeHtml(str){
+      const div = document.createElement('div');
+      div.textContent = String(str);
+      return div.innerHTML;
+    }
+
+    // ---------- Hidden (deleted) service buttons, persisted locally ----------
+    let authHiddenGroups = [];
+    try{ authHiddenGroups = JSON.parse(localStorage.getItem('authHiddenGroups') || '[]'); }catch(e){ authHiddenGroups = []; }
+    function saveHiddenGroups(){
+      try{ localStorage.setItem('authHiddenGroups', JSON.stringify(authHiddenGroups)); }catch(e){}
+    }
+    function applyHiddenGroupsToStaticGrid(){
+      document.querySelectorAll('#authCategoryGrid > .swipe-item[data-group]').forEach(item => {
+        const g = item.getAttribute('data-group');
+        item.style.display = authHiddenGroups.includes(g) ? 'none' : '';
+      });
+      AUTH_GROUPS = AUTH_GROUPS.filter(g => !authHiddenGroups.includes(g));
+    }
+
+    // ---------- Generic swipe-to-reveal engine (mouse + touch via Pointer Events) ----------
+    let swipeJustDragged = false;
+    let openSwipeItems = [];
+
+    function authCloseAllSwipes(){
+      openSwipeItems.forEach(el => { el.style.transition = 'transform .25s var(--ease)'; el.style.transform = 'translateX(0px)'; });
+      openSwipeItems = [];
+    }
+
+    function makeSwipeable(item, opts){
+      const content = item.querySelector('.swipe-content');
+      if(!content) return;
+      const maxLeft = opts.rightWidth || 0;   // dragging content left reveals the RIGHT action panel
+      const maxRight = opts.leftWidth || 0;   // dragging content right reveals the LEFT action panel
+      let startX = 0, startY = 0, baseX = 0, dragging = false, moved = false, axis = null;
+
+      function getX(){
+        const m = /translateX\((-?\d+(?:\.\d+)?)px\)/.exec(content.style.transform);
+        return m ? parseFloat(m[1]) : 0;
+      }
+      function setX(x){ content.style.transform = `translateX(${x}px)`; }
+
+      function onDown(e){
+        if(e.button !== undefined && e.button !== 0) return;
+        const pt = e.touches ? e.touches[0] : e;
+        startX = pt.clientX; startY = pt.clientY; baseX = getX();
+        dragging = true; moved = false; axis = null;
+        content.style.transition = 'none';
+      }
+      function onMove(e){
+        if(!dragging) return;
+        const pt = e.touches ? e.touches[0] : e;
+        const dx = pt.clientX - startX;
+        const dy = pt.clientY - startY;
+        if(axis === null){
+          if(Math.abs(dx) > 6 || Math.abs(dy) > 6) axis = Math.abs(dx) > Math.abs(dy) ? 'x' : 'y';
         }
-        return url;
-    }
-
-    // ---- Saved tags (persist across reloads, keyed by URL) ----
-    function loadSavedTags() {
-        try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}'); }
-        catch (e) { return {}; }
-    }
-    function saveSavedTags(map) {
-        try { localStorage.setItem(STORAGE_KEY, JSON.stringify(map)); }
-        catch (e) { /* storage full or unavailable — tagging still works this session */ }
-    }
-    function persistCurrentPhoto() {
-        const map = loadSavedTags();
-        const p = photos[currentIndex];
-        if (!p) return;
-        map[p.url] = { cat: p.cat, tags: p.tags };
-        saveSavedTags(map);
-    }
-
-    // ---- Parse pasted text: URL list, optional "URL, tags" and #SECTION headers ----
-    function parsePastedText(text) {
-        const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
-        const result = [];
-        let currentCat = 'uncategorized';
-        lines.forEach(line => {
-            const headerMatch = line.match(/^#\s*(single|dual|group)\b/i);
-            if (headerMatch) { currentCat = headerMatch[1].toLowerCase(); return; }
-            if (line.startsWith('http')) {
-                const commaIdx = line.indexOf(',');
-                const url = (commaIdx === -1 ? line : line.slice(0, commaIdx)).trim();
-                const tags = commaIdx === -1 ? '' : line.slice(commaIdx + 1).trim();
-                result.push({ url, cat: currentCat, tags });
-            }
-        });
-        return result;
-    }
-
-    function showToast(msg) {
-        const t = document.getElementById('toast');
-        t.textContent = msg;
-        t.classList.add('show');
-        clearTimeout(showToast._t);
-        showToast._t = setTimeout(() => t.classList.remove('show'), 1800);
-    }
-
-    // ---- Load flow ----
-    document.getElementById('loadBtn').addEventListener('click', () => {
-        const raw = document.getElementById('pasteArea').value;
-        if (!raw.trim()) { showToast('আগে ফটো URL পেস্ট করো'); return; }
-        const parsed = parsePastedText(raw);
-        if (parsed.length === 0) { showToast('কোনো ভ্যালিড URL পাওয়া যায়নি'); return; }
-
-        const saved = loadSavedTags();
-        photos = parsed.map(p => {
-            const remembered = saved[p.url];
-            return {
-                url: p.url,
-                cat: remembered ? remembered.cat : p.cat,
-                tags: remembered ? remembered.tags : p.tags
-            };
-        });
-        currentIndex = 0;
-        document.getElementById('loadCard').style.display = 'none';
-        document.getElementById('workspace').classList.add('active');
-        renderThumbGrid();
-        renderStage();
-        showToast(photos.length + ' টা ছবি লোড হয়েছে');
-    });
-
-    document.getElementById('backupFileInput').addEventListener('change', (e) => {
-        const file = e.target.files[0];
-        if (!file) return;
-        const reader = new FileReader();
-        reader.onload = () => {
-            try {
-                const data = JSON.parse(reader.result);
-                if (!Array.isArray(data)) throw new Error('bad format');
-                photos = data;
-                currentIndex = 0;
-                // merge into localStorage too, so it survives future reloads
-                const map = loadSavedTags();
-                photos.forEach(p => { map[p.url] = { cat: p.cat, tags: p.tags }; });
-                saveSavedTags(map);
-                document.getElementById('loadCard').style.display = 'none';
-                document.getElementById('workspace').classList.add('active');
-                renderThumbGrid();
-                renderStage();
-                showToast('ব্যাকআপ থেকে ' + photos.length + ' টা ছবি লোড হয়েছে');
-            } catch (err) {
-                showToast('ব্যাকআপ ফাইল পড়া যায়নি');
-            }
-        };
-        reader.readAsText(file);
-    });
-
-    // ---- Stage rendering ----
-    const stagePhoto = document.getElementById('stagePhoto');
-    const brokenMsg = document.getElementById('brokenMsg');
-
-    function renderStage() {
-        const p = photos[currentIndex];
-        if (!p) return;
-
-        document.getElementById('frameCounter').textContent =
-            String(currentIndex + 1).padStart(4, '0') + ' / ' + String(photos.length).padStart(4, '0');
-        document.getElementById('progressFill').style.width =
-            (((currentIndex + 1) / photos.length) * 100) + '%';
-
-        stagePhoto.style.display = 'none';
-        brokenMsg.style.display = 'none';
-        stagePhoto.onerror = () => { stagePhoto.style.display = 'none'; brokenMsg.style.display = 'block'; };
-        stagePhoto.onload = () => { stagePhoto.style.display = 'block'; brokenMsg.style.display = 'none'; };
-        stagePhoto.src = toRenderableUrl(p.url);
-
-        document.getElementById('catLabel').textContent = CAT_LABELS[p.cat] || 'Uncategorized';
-        const pill = document.getElementById('statusPill');
-        const isTagged = p.cat !== 'uncategorized' || (p.tags && p.tags.trim().length > 0);
-        pill.textContent = isTagged ? 'Tagged' : 'Untagged';
-        pill.className = 'status-pill ' + (isTagged ? 'done' : 'pending');
-
-        document.querySelectorAll('.cat-chip').forEach(chip => {
-            chip.classList.toggle('active', chip.dataset.cat === p.cat);
-        });
-
-        document.getElementById('tagInput').value = p.tags || '';
-        document.getElementById('jumpInput').value = currentIndex + 1;
-
-        updateStats();
-        highlightCurrentThumb();
-    }
-
-    function updateStats() {
-        const taggedCount = photos.filter(p => p.cat !== 'uncategorized' || (p.tags && p.tags.trim())).length;
-        document.getElementById('taggedCount').textContent = taggedCount;
-        document.getElementById('totalCount').textContent = photos.length;
-        document.getElementById('percentDone').textContent =
-            photos.length ? Math.round((taggedCount / photos.length) * 100) + '%' : '0%';
-    }
-
-    // ---- Category chips ----
-    document.querySelectorAll('.cat-chip').forEach(chip => {
-        chip.addEventListener('click', () => setCategory(chip.dataset.cat));
-    });
-    function setCategory(cat) {
-        const p = photos[currentIndex];
-        if (!p) return;
-        p.cat = cat;
-        persistCurrentPhoto();
-        renderStage();
-        renderThumbGrid();
-    }
-
-    // ---- Tag input ----
-    const tagInput = document.getElementById('tagInput');
-    let tagDebounce = null;
-    tagInput.addEventListener('input', () => {
-        const p = photos[currentIndex];
-        if (!p) return;
-        p.tags = tagInput.value;
-        clearTimeout(tagDebounce);
-        tagDebounce = setTimeout(() => {
-            persistCurrentPhoto();
-            updateStats();
-            renderThumbGrid();
-        }, 250);
-    });
-    tagInput.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') { e.preventDefault(); saveAndNext(); }
-    });
-
-    function saveAndNext() {
-        persistCurrentPhoto();
-        goTo(currentIndex + 1);
-    }
-    document.getElementById('saveNextBtn').addEventListener('click', saveAndNext);
-
-    // ---- Navigation ----
-    function goTo(idx) {
-        if (photos.length === 0) return;
-        currentIndex = Math.max(0, Math.min(photos.length - 1, idx));
-        renderStage();
-    }
-    document.getElementById('prevBtn').addEventListener('click', () => goTo(currentIndex - 1));
-    document.getElementById('nextBtn').addEventListener('click', () => goTo(currentIndex + 1));
-    document.getElementById('jumpBtn').addEventListener('click', () => {
-        const n = parseInt(document.getElementById('jumpInput').value, 10);
-        if (!isNaN(n)) goTo(n - 1);
-    });
-    document.getElementById('jumpInput').addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') {
-            const n = parseInt(e.target.value, 10);
-            if (!isNaN(n)) goTo(n - 1);
+        if(axis === 'y') return;
+        if(Math.abs(dx) > 4) moved = true;
+        if(e.cancelable) e.preventDefault();
+        let next = baseX + dx;
+        if(next < -maxLeft) next = -maxLeft;
+        if(next > maxRight) next = maxRight;
+        setX(next);
+      }
+      function onUp(){
+        if(!dragging) return;
+        dragging = false;
+        content.style.transition = 'transform .25s var(--ease)';
+        const x = getX();
+        let target = 0;
+        if(maxLeft > 0 && x <= -maxLeft / 2) target = -maxLeft;
+        else if(maxRight > 0 && x >= maxRight / 2) target = maxRight;
+        setX(target);
+        if(target !== 0){
+          openSwipeItems.filter(el => el !== content).forEach(el => { el.style.transition = 'transform .25s var(--ease)'; el.style.transform = 'translateX(0px)'; });
+          openSwipeItems = [content];
+        }else{
+          openSwipeItems = openSwipeItems.filter(el => el !== content);
         }
-    });
-
-    document.addEventListener('keydown', (e) => {
-        const tag = document.activeElement.tagName;
-        const typing = tag === 'INPUT' || tag === 'TEXTAREA';
-        if (!typing) {
-            if (e.key === 'ArrowLeft') goTo(currentIndex - 1);
-            if (e.key === 'ArrowRight') goTo(currentIndex + 1);
-            if (e.key === '1') setCategory('single');
-            if (e.key === '2') setCategory('dual');
-            if (e.key === '3') setCategory('group');
-            if (e.key === '0') setCategory('uncategorized');
-            if (e.key.toLowerCase() === 'm') toggleMic();
+        if(moved){
+          swipeJustDragged = true;
+          setTimeout(() => { swipeJustDragged = false; }, 80);
         }
-    });
+      }
+      content.addEventListener('pointerdown', onDown);
+      content.addEventListener('pointermove', onMove);
+      window.addEventListener('pointerup', onUp);
+      content.addEventListener('pointercancel', onUp);
+    }
 
-    // ---- Voice input (Web Speech API, English + Bengali) ----
-    let recognition = null;
-    let isListening = false;
-    const micBtn = document.getElementById('micBtn');
-    function initRecognition() {
-        const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-        if (!SR) return null;
-        const r = new SR();
-        r.continuous = false;
-        r.interimResults = false;
-        r.lang = 'bn-BD';
-        r.onresult = (e) => {
-            const transcript = e.results[0][0].transcript;
-            tagInput.value = (tagInput.value ? tagInput.value + ' ' : '') + transcript;
-            const p = photos[currentIndex];
-            if (p) { p.tags = tagInput.value; persistCurrentPhoto(); updateStats(); renderThumbGrid(); }
-        };
-        r.onend = () => { isListening = false; micBtn.classList.remove('listening'); };
-        r.onerror = () => { isListening = false; micBtn.classList.remove('listening'); };
-        return r;
-    }
-    function toggleMic() {
-        if (!recognition) recognition = initRecognition();
-        if (!recognition) { showToast('এই ব্রাউজারে ভয়েস ইনপুট সাপোর্ট নেই'); return; }
-        if (isListening) { recognition.stop(); return; }
-        isListening = true;
-        micBtn.classList.add('listening');
-        recognition.start();
-    }
-    micBtn.addEventListener('click', toggleMic);
+    // Auto-close any open swipe item when the user taps/clicks somewhere
+    // that isn't part of that open item (e.g. another card, blank space, etc).
+    document.addEventListener('pointerdown', (e) => {
+      if(openSwipeItems.length === 0) return;
+      const stillInside = openSwipeItems.some(content => {
+        const wrapper = content.closest('.swipe-item');
+        return wrapper && wrapper.contains(e.target);
+      });
+      if(!stillInside) authCloseAllSwipes();
+    }, true);
 
-    // ---- Overview thumb grid ----
-    function visiblePhotoIndices() {
-        return photos
-            .map((p, i) => ({ p, i }))
-            .filter(({ p }) => {
-                const tagged = p.cat !== 'uncategorized' || (p.tags && p.tags.trim());
-                if (overviewFilter === 'all') return true;
-                if (overviewFilter === 'tagged') return tagged;
-                if (overviewFilter === 'untagged') return !tagged;
-                return p.cat === overviewFilter;
-            })
-            .map(({ i }) => i);
+    // ---------- Drag-to-reorder for account code boxes ----------
+    // Order is remembered per-group in localStorage so it survives refreshes
+    // and re-fetches (the server always returns accounts in its own order).
+    let authReorderState = null;
+
+    function authOrderKey(group){ return 'authOrder:' + group; }
+
+    function authApplyCustomOrder(group, accounts){
+      let order = [];
+      try{ order = JSON.parse(localStorage.getItem(authOrderKey(group)) || '[]'); }catch(e){ order = []; }
+      if(!order.length) return accounts;
+      const byName = new Map(accounts.map(a => [a.name, a]));
+      const ordered = [];
+      order.forEach(name => {
+        if(byName.has(name)){ ordered.push(byName.get(name)); byName.delete(name); }
+      });
+      // Any account not in the saved order (newly added) goes at the end,
+      // in the order the server returned it.
+      byName.forEach(a => ordered.push(a));
+      return ordered;
     }
-    function renderThumbGrid() {
-        const grid = document.getElementById('thumbGrid');
-        const indices = visiblePhotoIndices();
-        grid.innerHTML = indices.map(i => {
-            const p = photos[i];
-            return '<div class="thumb-item" data-idx="' + i + '">' +
-                '<img src="' + toRenderableUrl(p.url) + '" loading="lazy" onerror="this.style.opacity=0.15">' +
-                '<span class="num">' + (i + 1) + '</span>' +
-                '<span class="dot ' + p.cat + '"></span>' +
-                '</div>';
-        }).join('');
-        grid.querySelectorAll('.thumb-item').forEach(el => {
-            el.addEventListener('click', () => goTo(parseInt(el.dataset.idx, 10)));
+
+    function authSaveOrderFromDOM(group){
+      const container = document.getElementById('authCodeContainer');
+      const order = Array.from(container.children).map(el => el.getAttribute('data-acc-name'));
+      try{ localStorage.setItem(authOrderKey(group), JSON.stringify(order)); }catch(e){}
+    }
+
+    function authStartReorder(e, item, group, handle){
+      if(e.button !== undefined && e.button !== 0) return;
+      e.preventDefault();
+      authCloseAllSwipes();
+      const rect = item.getBoundingClientRect();
+      authReorderState = { item, group, grabOffsetY: e.clientY - rect.top, pointerId: e.pointerId };
+      item.classList.add('auth-reordering');
+      document.body.style.userSelect = 'none';
+      window.addEventListener('pointermove', authReorderMoveListener);
+      window.addEventListener('pointerup', authReorderUpListener);
+      window.addEventListener('pointercancel', authReorderUpListener);
+    }
+
+    function authReorderMoveListener(e){
+      if(!authReorderState || e.pointerId !== authReorderState.pointerId) return;
+      if(e.cancelable) e.preventDefault();
+      authReorderMove(e);
+    }
+
+    function authReorderUpListener(e){
+      if(!authReorderState || e.pointerId !== authReorderState.pointerId) return;
+      window.removeEventListener('pointermove', authReorderMoveListener);
+      window.removeEventListener('pointerup', authReorderUpListener);
+      window.removeEventListener('pointercancel', authReorderUpListener);
+      authEndReorder();
+    }
+
+    function authReorderMove(e){
+      if(!authReorderState) return;
+      const { item, grabOffsetY } = authReorderState;
+      const container = item.parentElement;
+      if(!container) return;
+
+      // Measure the item's natural (untransformed) position so the visual
+      // offset stays correct even after a DOM swap changes its static spot.
+      const prevTransform = item.style.transform;
+      item.style.transform = 'none';
+      const naturalTop = item.getBoundingClientRect().top;
+      item.style.transform = prevTransform;
+
+      const desiredTop = e.clientY - grabOffsetY;
+      item.style.transform = `translateY(${desiredTop - naturalTop}px)`;
+
+      // Simple edge auto-scroll while dragging near the top/bottom of the list.
+      const containerRect = container.getBoundingClientRect();
+      const margin = 36;
+      if(e.clientY < containerRect.top + margin) container.scrollTop -= 10;
+      else if(e.clientY > containerRect.bottom - margin) container.scrollTop += 10;
+
+      // Reorder siblings based on where the pointer currently sits.
+      const siblings = Array.from(container.children).filter(el => el !== item);
+      let insertBefore = null;
+      for(const sib of siblings){
+        const r = sib.getBoundingClientRect();
+        const mid = r.top + r.height / 2;
+        if(e.clientY < mid){ insertBefore = sib; break; }
+      }
+      if(insertBefore){
+        if(item.nextElementSibling !== insertBefore) container.insertBefore(item, insertBefore);
+      }else if(container.lastElementChild !== item){
+        container.appendChild(item);
+      }
+    }
+
+    function authEndReorder(){
+      if(!authReorderState) return;
+      const { item, group } = authReorderState;
+      item.style.transition = 'transform 0.15s var(--ease)';
+      item.style.transform = 'translateY(0px)';
+      item.classList.remove('auth-reordering');
+      document.body.style.userSelect = '';
+      setTimeout(() => { item.style.transition = ''; item.style.transform = ''; }, 160);
+      authSaveOrderFromDOM(group);
+      authReorderState = null;
+    }
+
+    // ---------- Password confirm modal (used for every delete action) ----------
+    let authPendingDeleteAction = null;
+    function authOpenConfirmModal(title, action){
+      authPendingDeleteAction = action;
+      document.getElementById('authPassConfirmTitle').textContent = title;
+      const input = document.getElementById('authPassConfirmInput');
+      input.value = '';
+      document.getElementById('authPassConfirmError').textContent = '';
+      document.getElementById('authPassConfirmModal').style.display = 'flex';
+      setTimeout(() => input.focus(), 50);
+    }
+    function authCloseConfirmModal(){
+      const modal = document.getElementById('authPassConfirmModal');
+      if(modal) modal.style.display = 'none';
+      authPendingDeleteAction = null;
+    }
+    let authConfirmInFlight = false;
+    async function authConfirmPassAction(){
+      const input = document.getElementById('authPassConfirmInput');
+      const val = input.value.trim();
+      const errorEl = document.getElementById('authPassConfirmError');
+      if(!val || authConfirmInFlight) return;
+      authConfirmInFlight = true;
+      const btn = document.querySelector('#authPassConfirmModal .auth-add-save');
+      const originalLabel = btn.textContent;
+      btn.textContent = 'Checking...';
+      btn.disabled = true;
+      errorEl.textContent = '';
+      try{
+        // Verify against the real vault password on the server (same
+        // check used to unlock the authenticator) — no hardcoded secret.
+        await apiLogin('totp', val);
+        const action = authPendingDeleteAction;
+        authCloseConfirmModal();
+        if(action) action();
+      }catch(err){
+        errorEl.textContent = describeAuthError(err, 'login');
+      }finally{
+        btn.textContent = originalLabel;
+        btn.disabled = false;
+        authConfirmInFlight = false;
+      }
+    }
+
+    // ---------- Delete an entire service button from the dashboard ----------
+    function authRequestDeleteGroup(group, btnEl){
+      authOpenConfirmModal(`Delete "${group}"?`, () => authDeleteGroup(group));
+    }
+    async function authDeleteGroup(group){
+      const item = document.querySelector(`#authCategoryGrid .swipe-item[data-group="${CSS.escape(group)}"]`);
+      if(item){
+        if(STATIC_GROUPS.some(s => s.toLowerCase() === group.toLowerCase())){
+          item.style.display = 'none';
+        }else{
+          item.remove();
+        }
+      }
+      if(!authHiddenGroups.includes(group)){
+        authHiddenGroups.push(group);
+        saveHiddenGroups();
+      }
+      AUTH_GROUPS = AUTH_GROUPS.filter(g => g !== group);
+
+      // best-effort: also remove any custom accounts under this group on the server
+      try{
+        const entry = authPrefetchCache[group] || await authFetchGroup(group).catch(() => null);
+        if(entry && entry.data && Array.isArray(entry.data.accounts)){
+          entry.data.accounts.forEach(acc => {
+            fetch(`${API_BASE}/totp/remove`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ token: authToken, group, name: acc.name })
+            }).catch(() => {});
+          });
+        }
+      }catch(e){ /* ignore */ }
+      delete authPrefetchCache[group];
+      delete authPrefetchPromises[group];
+    }
+
+    // ---------- Edit an individual account ----------
+    function authOpenEditAccountForm(group, oldName){
+      document.getElementById('authEditOldGroup').value = group;
+      document.getElementById('authEditOldName').value = oldName;
+      document.getElementById('authEditName').value = oldName;
+      document.getElementById('authEditSecret').value = '';
+      document.getElementById('authEditError').textContent = '';
+      document.getElementById('authEditModal').style.display = 'flex';
+      setTimeout(() => document.getElementById('authEditName').focus(), 50);
+    }
+    function authCloseEditModal(){
+      const modal = document.getElementById('authEditModal');
+      if(modal) modal.style.display = 'none';
+    }
+    let authEditInFlight = false;
+    async function authSaveEditAccount(){
+      const group = document.getElementById('authEditOldGroup').value;
+      const oldName = document.getElementById('authEditOldName').value;
+      const newName = document.getElementById('authEditName').value.trim();
+      const newSecret = document.getElementById('authEditSecret').value.trim();
+      const errorEl = document.getElementById('authEditError');
+      if(authEditInFlight) return;
+      if(!newName || !newSecret){
+        errorEl.textContent = 'Both name and Secret key are required.';
+        return;
+      }
+      authEditInFlight = true;
+      const saveBtn = document.querySelector('#authEditModal .auth-add-save');
+      const original = saveBtn.textContent;
+      saveBtn.textContent = 'Saving...';
+      saveBtn.disabled = true;
+      errorEl.textContent = '';
+      try{
+        const editRes = await fetch(`${API_BASE}/totp/edit`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ token: authToken, group, oldName, newName, secret: newSecret })
         });
-        highlightCurrentThumb();
-    }
-    function highlightCurrentThumb() {
-        document.querySelectorAll('.thumb-item').forEach(el => {
-            el.classList.toggle('current', parseInt(el.dataset.idx, 10) === currentIndex);
-        });
-    }
-    document.querySelectorAll('.of-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-            document.querySelectorAll('.of-btn').forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-            overviewFilter = btn.dataset.filter;
-            renderThumbGrid();
-        });
-    });
+        const editData = await editRes.json().catch(() => ({}));
+        if(!editRes.ok) throw new Error(editData.error || 'Could not save.');
 
-    // ---- Export to the gallery's .txt format ----
-    function buildExportText() {
-        const groups = { uncategorized: [], single: [], dual: [], group: [] };
-        photos.forEach(p => { (groups[p.cat] || groups.uncategorized).push(p); });
-
-        const lines = [];
-        groups.uncategorized.forEach(p => lines.push(p.tags ? p.url + ', ' + p.tags : p.url));
-        ['single', 'dual', 'group'].forEach(cat => {
-            if (groups[cat].length === 0) return;
-            lines.push('#' + cat.toUpperCase());
-            groups[cat].forEach(p => lines.push(p.tags ? p.url + ', ' + p.tags : p.url));
-        });
-        return lines.join('\n');
+        delete authPrefetchCache[group];
+        delete authPrefetchPromises[group];
+        authCloseEditModal();
+        await authOpenCategory(group);
+      }catch(err){
+        errorEl.textContent = err.message || 'Network error, please try again.';
+      }finally{
+        saveBtn.textContent = original;
+        saveBtn.disabled = false;
+        authEditInFlight = false;
+      }
     }
 
-    document.getElementById('exportTxtBtn').addEventListener('click', () => {
-        const text = buildExportText();
-        const blob = new Blob([text], { type: 'text/plain' });
-        const a = document.createElement('a');
-        a.href = URL.createObjectURL(blob);
-        a.download = 'Tonir photo Link.txt';
-        a.click();
-        showToast('txt ফাইল ডাউনলোড হয়েছে');
-    });
+    // ---------- Delete an individual account ----------
+    async function authDeleteAccount(group, name){
+      try{
+        await fetch(`${API_BASE}/totp/remove`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ token: authToken, group, name })
+        });
+      }catch(e){ /* ignore */ }
+      delete authPrefetchCache[group];
+      delete authPrefetchPromises[group];
+      if(authActiveGroup === group) await authOpenCategory(group);
+    }
 
-    document.getElementById('copyTxtBtn').addEventListener('click', () => {
-        const text = buildExportText();
-        const preview = document.getElementById('exportPreview');
-        preview.style.display = 'block';
-        preview.value = text;
-        preview.select();
-        navigator.clipboard.writeText(text).then(() => showToast('টেক্সট কপি হয়েছে')).catch(() => {});
-    });
+    function resetAuthLock(){
+      authToken = null;
+      authActiveGroup = null;
+      authPrefetchCache = {};
+      authPrefetchPromises = {};
+      authLastRenderedData = null;
+      authProgressEls = {};
+      if(authProgressTimer){ clearInterval(authProgressTimer); authProgressTimer = null; }
+      const passInput = document.getElementById('authMasterPass');
+      const errorEl = document.getElementById('authLockError');
+      if(passInput){ passInput.value = ''; passInput.type = 'password'; }
+      if(errorEl){ errorEl.textContent = ''; }
+      document.getElementById('authEyeIcon').innerHTML = '<i class="fa-solid fa-eye"></i>';
+      document.querySelectorAll('.auth-screen').forEach(s => s.classList.remove('active'));
+      document.getElementById('authLockScreen').classList.add('active');
+      document.getElementById('authMainTitle').textContent = '🔒 Authenticator';
+      const addForm = document.getElementById('authAddForm');
+      const addBtn = document.getElementById('authAddBtn');
+      if(addForm) addForm.style.display = 'none';
+      if(addBtn) addBtn.style.display = 'flex';
+      authCloseSettingsModal();
+      authCloseConfirmModal();
+      authCloseEditModal();
+      document.querySelectorAll('.auth-cat-btn-dynamic').forEach(el => el.parentElement.remove());
+      applyHiddenGroupsToStaticGrid();
+      authCloseAllSwipes();
+    }
 
-    // ---- Backup (.json) of full tagging state ----
-    document.getElementById('saveBackupBtn').addEventListener('click', () => {
-        const blob = new Blob([JSON.stringify(photos, null, 2)], { type: 'application/json' });
-        const a = document.createElement('a');
-        a.href = URL.createObjectURL(blob);
-        a.download = 'phototagger-backup.json';
-        a.click();
-        showToast('ব্যাকআপ .json ডাউনলোড হয়েছে');
-    });
+    function authTogglePass(){
+      const p = document.getElementById('authMasterPass');
+      const eye = document.getElementById('authEyeIcon');
+      if(p.type === "password"){
+        p.type = "text";
+        eye.innerHTML = '<i class="fa-solid fa-eye-slash"></i>';
+      } else {
+        p.type = "password";
+        eye.innerHTML = '<i class="fa-solid fa-eye"></i>';
+      }
+    }
 
-    document.getElementById('clearBtn').addEventListener('click', () => {
-        if (!confirm('সব সেভ করা ট্যাগ ও ক্যাটাগরি মুছে ফেলতে চাও? এই কাজটি ফেরানো যাবে না।')) return;
-        localStorage.removeItem(STORAGE_KEY);
-        photos.forEach(p => { p.cat = 'uncategorized'; p.tags = ''; });
-        renderStage();
-        renderThumbGrid();
-        showToast('সব প্রোগ্রেস মুছে ফেলা হয়েছে');
+    function authClearError(){
+      document.getElementById('authLockError').textContent = '';
+    }
+
+    let authInFlight = false;
+    async function authTryUnlock(){
+      const val = document.getElementById('authMasterPass').value.trim();
+      const errorEl = document.getElementById('authLockError');
+      const btn = document.getElementById('authSubmitBtn');
+      if(!val || authInFlight) return;
+      authInFlight = true;
+      const originalLabel = btn.textContent;
+      btn.textContent = 'Checking...';
+      btn.disabled = true;
+      try{
+        authToken = await apiLogin('totp', val);
+        errorEl.textContent = '';
+        authShowMenu();
+        authPrefetchAll();
+      }catch(err){
+        errorEl.textContent = describeAuthError(err, 'login');
+      }finally{
+        btn.textContent = originalLabel;
+        btn.disabled = false;
+        authInFlight = false;
+      }
+    }
+
+    function authCopyText(text){
+      navigator.clipboard?.writeText(text);
+      const notice = document.getElementById('authCopyNotice');
+      notice.style.display = 'block';
+      setTimeout(() => { notice.style.display = 'none'; }, 1300);
+    }
+
+    function authShowMenu(){
+      document.getElementById('authMainTitle').textContent = "🔒 Authenticator";
+      document.querySelectorAll('.auth-screen').forEach(s => s.classList.remove('active'));
+      document.getElementById('authMenuScreen').classList.add('active');
+      applyHiddenGroupsToStaticGrid();
+      authLoadCustomGroups();
+    }
+
+    // ---------- Auto icon resolver for custom (user-added) services ----------
+    // 1) If the service name matches a well-known brand, use its real
+    //    Font Awesome brand icon — instant, no network request needed.
+    // 2) Otherwise, guess the company's domain from the name and pull its
+    //    real logo from Clearbit's free logo API. If that image fails to
+    //    load (unknown domain, offline, etc.) it quietly falls back to the
+    //    plain key icon so the button never looks broken.
+    const KNOWN_BRAND_ICONS = {
+      shopify:'fa-shopify', paypal:'fa-paypal', spotify:'fa-spotify', discord:'fa-discord',
+      github:'fa-github', gitlab:'fa-gitlab', bitbucket:'fa-bitbucket', reddit:'fa-reddit',
+      whatsapp:'fa-whatsapp', steam:'fa-steam', amazon:'fa-amazon', apple:'fa-apple',
+      microsoft:'fa-microsoft', dropbox:'fa-dropbox', twitter:'fa-x-twitter', x:'fa-x-twitter',
+      youtube:'fa-youtube', pinterest:'fa-pinterest', snapchat:'fa-snapchat', slack:'fa-slack',
+      twitch:'fa-twitch', vimeo:'fa-vimeo', wordpress:'fa-wordpress', skype:'fa-skype',
+      yahoo:'fa-yahoo', tumblr:'fa-tumblr', behance:'fa-behance', figma:'fa-figma',
+      trello:'fa-trello', patreon:'fa-patreon', etsy:'fa-etsy', airbnb:'fa-airbnb',
+      uber:'fa-uber', google:'fa-google', facebook:'fa-facebook',
+      instagram:'fa-instagram', tiktok:'fa-tiktok', linkedin:'fa-linkedin', telegram:'fa-telegram',
+      binance:'fa-btc', mega:'fa-cloud'
+    };
+
+    // Manual overrides: real logo URLs for services where auto-guessing the
+    // domain (or Clearbit's coverage) doesn't work reliably.
+    const MANUAL_LOGO_URLS = {
+      redotpay: 'https://www.redotpay.com/img/favicon.png'
+    };
+
+    function authGetGroupIconHtml(name){
+      const key = String(name).toLowerCase().trim();
+      const brand = KNOWN_BRAND_ICONS[key];
+      if(brand){
+        return `<i class="fa-brands ${brand}"></i>`;
+      }
+      const manualUrl = MANUAL_LOGO_URLS[key];
+      const fallback = `this.outerHTML='<i class=&quot;fa-solid fa-key&quot;></i>'`;
+      if(manualUrl){
+        return `<img class="auth-cat-icon-img" alt="" loading="lazy" src="${manualUrl}" onerror="${fallback}">`;
+      }
+      // Best-effort domain guess: "RedotPay" -> "redotpay.com"
+      const domainGuess = key.replace(/[^a-z0-9]/g, '') + '.com';
+      return `<img class="auth-cat-icon-img" alt="" loading="lazy"
+                src="https://logo.clearbit.com/${domainGuess}?size=64"
+                onerror="${fallback}">`;
+    }
+
+    const STATIC_GROUPS = ['Gmail','Facebook','Instagram','TikTok','Mega','linkedin','Telegram','Binance'];
+    let AUTH_GROUPS = [...STATIC_GROUPS];
+    let authPrefetchCache = {};
+    let authPrefetchPromises = {};
+
+    // ---------- Load and render custom (user-created) service buttons ----------
+    async function authLoadCustomGroups(){
+      if(!authToken) return;
+      try{
+        const res = await fetch(`${API_BASE}/totp-groups?token=${encodeURIComponent(authToken)}`, { cache: 'no-store' });
+        const data = await res.json();
+        if(!res.ok) return;
+        const extra = (data.groups || []).filter(
+          g => !STATIC_GROUPS.some(s => s.toLowerCase() === g.toLowerCase())
+        );
+        renderExtraGroupButtons(extra);
+        AUTH_GROUPS = [...STATIC_GROUPS, ...extra];
+        extra.forEach(g => authFetchGroup(g).catch(() => {}));
+      }catch(e){ /* silently ignore network errors, static buttons still exist */ }
+    }
+
+    function renderExtraGroupButtons(groups){
+      const grid = document.getElementById('authCategoryGrid');
+      grid.querySelectorAll('.auth-cat-btn-dynamic').forEach(el => el.parentElement.remove());
+      groups
+        .filter(g => !authHiddenGroups.includes(g))
+        .forEach(g => {
+          const item = document.createElement('div');
+          item.className = 'swipe-item';
+          item.setAttribute('data-group', g);
+          item.innerHTML = `
+            <div class="swipe-actions swipe-actions-right">
+              <button class="swipe-action-btn swipe-delete-btn"><i class="fa-solid fa-trash"></i></button>
+            </div>
+            <div class="auth-cat-btn auth-cat-btn-dynamic swipe-content">${authGetGroupIconHtml(g)} ${escapeHtml(g)}</div>`;
+          item.querySelector('.swipe-content').addEventListener('click', () => {
+            if(swipeJustDragged) return;
+            authOpenCategory(g);
+          });
+          item.querySelector('.swipe-delete-btn').addEventListener('click', (e) => {
+            e.stopPropagation();
+            authRequestDeleteGroup(g, e.currentTarget);
+          });
+          makeSwipeable(item, { rightWidth: 64 });
+          grid.appendChild(item);
+        });
+    }
+
+    function authOpenSettingsModal(){
+      document.getElementById('authAddGroupError').textContent = '';
+      document.getElementById('authSettingsModal').style.display = 'flex';
+    }
+
+    function authCloseSettingsModal(){
+      const modal = document.getElementById('authSettingsModal');
+      if(modal) modal.style.display = 'none';
+      const n1 = document.getElementById('authNewGroupName');
+      const n2 = document.getElementById('authNewGroupAccName');
+      const n3 = document.getElementById('authNewGroupSecret');
+      const err = document.getElementById('authAddGroupError');
+      if(n1) n1.value = '';
+      if(n2) n2.value = '';
+      if(n3) n3.value = '';
+      if(err) err.textContent = '';
+    }
+
+    let authAddGroupInFlight = false;
+    async function authSaveNewGroup(){
+      const group = document.getElementById('authNewGroupName').value.trim();
+      const name = document.getElementById('authNewGroupAccName').value.trim();
+      const secret = document.getElementById('authNewGroupSecret').value.trim();
+      const errorEl = document.getElementById('authAddGroupError');
+      if(authAddGroupInFlight) return;
+      if(!group || !name || !secret){
+        errorEl.textContent = 'Service name, Account name and Secret key — all are required.';
+        return;
+      }
+      authAddGroupInFlight = true;
+      const saveBtn = document.querySelector('#authAddGroupForm .auth-add-save');
+      const originalLabel = saveBtn.textContent;
+      saveBtn.textContent = 'Saving...';
+      saveBtn.disabled = true;
+      errorEl.textContent = '';
+      try{
+        const res = await fetch(`${API_BASE}/totp/add`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ token: authToken, group, name, secret })
+        });
+        const data = await res.json().catch(() => ({}));
+        if(!res.ok) throw new Error(data.error || 'Could not add.');
+
+        authCloseSettingsModal();
+        await authLoadCustomGroups();
+      }catch(err){
+        errorEl.textContent = err.message || 'Network error, please try again.';
+      }finally{
+        saveBtn.textContent = originalLabel;
+        saveBtn.disabled = false;
+        authAddGroupInFlight = false;
+      }
+    }
+
+    function authFetchGroup(group){
+      if(authPrefetchPromises[group]) return authPrefetchPromises[group];
+      const p = (async () => {
+        const res = await fetch(`${API_BASE}/totp?group=${encodeURIComponent(group)}&token=${encodeURIComponent(authToken)}`, { cache: 'no-store' });
+        const data = await res.json();
+        if(!res.ok) throw new Error('fetch failed');
+        const entry = { data, fetchedAt: Date.now(), group };
+        authPrefetchCache[group] = entry;
+        return entry;
+      })();
+      authPrefetchPromises[group] = p;
+      p.finally(() => { delete authPrefetchPromises[group]; });
+      return p;
+    }
+
+    function authPrefetchAll(){
+      authPrefetchCache = {};
+      AUTH_GROUPS.forEach(g => authFetchGroup(g).catch(() => {  }));
+    }
+
+    async function authOpenCategory(group){
+      if(!authToken || swipeJustDragged) return;
+      authCloseAllSwipes();
+      authActiveGroup = group;
+      document.getElementById('authMainTitle').textContent = group + " Code";
+      const container = document.getElementById('authCodeContainer');
+      container.innerHTML = "";
+      authLastRenderedData = null;
+      authProgressEls = {};
+      authHideAddForm();
+
+      document.getElementById('authMenuScreen').classList.remove('active');
+      document.getElementById('authListScreen').classList.add('active');
+
+      let entry = authPrefetchCache[group];
+      if(!entry){
+        try{
+          entry = await authFetchGroup(group);
+        }catch(e){
+          container.innerHTML = "<p style='text-align:center;color:var(--text-dim);'>Couldn't load codes — try again.</p>";
+          return;
+        }
+        if(authActiveGroup !== group) return;
+      }
+
+      authLastFetch = entry.fetchedAt;
+      authRefreshCodes._cache = entry;
+      renderCodes(entry, Date.now());
+
+      if(!authTimerStarted){
+        authTimerStarted = true;
+        setInterval(authRefreshCodes, 1000);
+      }
+    }
+
+    function authShowAddForm(){
+      document.getElementById('authAddForm').style.display = 'block';
+      document.getElementById('authAddBtn').style.display = 'none';
+      document.getElementById('authNewName').focus();
+    }
+
+    function authHideAddForm(){
+      document.getElementById('authAddForm').style.display = 'none';
+      document.getElementById('authAddBtn').style.display = 'flex';
+      document.getElementById('authNewName').value = '';
+      document.getElementById('authNewSecret').value = '';
+      document.getElementById('authAddError').textContent = '';
+    }
+
+    let authAddInFlight = false;
+    async function authSaveNewAccount(){
+      const name = document.getElementById('authNewName').value.trim();
+      const secret = document.getElementById('authNewSecret').value.trim();
+      const errorEl = document.getElementById('authAddError');
+      if(authAddInFlight) return;
+      if(!name || !secret){
+        errorEl.textContent = 'Both name and Secret key are required.';
+        return;
+      }
+      authAddInFlight = true;
+      const saveBtn = document.querySelector('.auth-add-save');
+      const originalLabel = saveBtn.textContent;
+      saveBtn.textContent = 'Saving...';
+      saveBtn.disabled = true;
+      errorEl.textContent = '';
+      try{
+        const res = await fetch(`${API_BASE}/totp/add`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ token: authToken, group: authActiveGroup, name, secret })
+        });
+        const data = await res.json().catch(() => ({}));
+        if(!res.ok) throw new Error(data.error || 'Could not add.');
+
+        delete authPrefetchCache[authActiveGroup];
+        delete authPrefetchPromises[authActiveGroup];
+        authHideAddForm();
+        await authOpenCategory(authActiveGroup);
+      }catch(err){
+        errorEl.textContent = err.message || 'Network error, please try again.';
+      }finally{
+        saveBtn.textContent = originalLabel;
+        saveBtn.disabled = false;
+        authAddInFlight = false;
+      }
+    }
+
+    let authLastFetch = 0;
+    async function authRefreshCodes(){
+      if(!authToken || !authActiveGroup) return;
+      const requestedGroup = authActiveGroup;
+
+      const now = Date.now();
+      const cache = authRefreshCodes._cache;
+      if(now - authLastFetch < 3000 && cache && cache.group === requestedGroup){
+        renderCodes(cache, now);
+        return;
+      }
+      try{
+        const entry = await authFetchGroup(requestedGroup);
+        if(authActiveGroup !== requestedGroup) return;
+        authLastFetch = entry.fetchedAt;
+        authRefreshCodes._cache = entry;
+        renderCodes(entry, authLastFetch);
+      }catch(e){  }
+    }
+
+    function renderCodes(cacheObj, now){
+      if(authReorderState) return; // don't touch the DOM while the user is mid-drag
+      const container = document.getElementById('authCodeContainer');
+      const { data, fetchedAt } = cacheObj;
+
+      if(data !== authLastRenderedData){
+        authLastRenderedData = data;
+        authProgressEls = {};
+        container.innerHTML = "";
+        const group = authActiveGroup;
+        const orderedAccounts = authApplyCustomOrder(group, data.accounts);
+        orderedAccounts.forEach((acc) => {
+          const item = document.createElement('div');
+          item.className = 'swipe-item acc-swipe-item';
+          item.setAttribute('data-acc-name', acc.name);
+          item.innerHTML = `
+            <div class="swipe-actions swipe-actions-left">
+              <button class="swipe-action-btn swipe-edit-btn" title="Edit"><i class="fa-solid fa-pen"></i></button>
+            </div>
+            <div class="swipe-actions swipe-actions-right">
+              <button class="swipe-action-btn swipe-delete-btn" title="Delete"><i class="fa-solid fa-trash"></i></button>
+            </div>
+            <div class="auth-account-box swipe-content">
+              <div class="auth-drag-handle" title="Drag to reorder"><i class="fa-solid fa-grip-lines"></i></div>
+              <span class="auth-account-name">${escapeHtml(acc.name)}</span>
+              <div class="auth-otp-code">${escapeHtml(acc.code)}</div>
+              <div class="auth-progress-bar"><div class="auth-progress-fill"></div></div>
+            </div>`;
+
+          item.querySelector('.swipe-content').addEventListener('click', () => {
+            if(swipeJustDragged) return;
+            authCopyText(acc.code);
+          });
+          item.querySelector('.swipe-edit-btn').addEventListener('click', (e) => {
+            e.stopPropagation();
+            authCloseAllSwipes();
+            authOpenEditAccountForm(group, acc.name);
+          });
+          item.querySelector('.swipe-delete-btn').addEventListener('click', (e) => {
+            e.stopPropagation();
+            authOpenConfirmModal(`Delete "${acc.name}"?`, () => authDeleteAccount(group, acc.name));
+          });
+          const handle = item.querySelector('.auth-drag-handle');
+          handle.addEventListener('click', (e) => e.stopPropagation());
+          handle.addEventListener('pointerdown', (e) => {
+            e.stopPropagation();
+            authStartReorder(e, item, group, handle);
+          });
+          makeSwipeable(item, { leftWidth: 64, rightWidth: 64 });
+
+          container.appendChild(item);
+          authProgressEls[acc.name] = item.querySelector('.auth-progress-fill');
+        });
+      }
+
+      const elapsedSec = (now - fetchedAt) / 1000;
+      data.accounts.forEach((acc) => {
+        const fillEl = authProgressEls[acc.name];
+        if(!fillEl) return;
+        const remaining = Math.max(acc.secondsRemaining - elapsedSec, 0);
+        const pct = (remaining / 30) * 100;
+        fillEl.style.width = pct + '%';
+      });
+
+      if(!authProgressTimer){
+        authProgressTimer = setInterval(() => {
+          const c = authRefreshCodes._cache;
+          if(c) renderCodes(c, Date.now());
+        }, 100);
+      }
+    }
+
+    // Wire up swipe-to-delete on the built-in (static) dashboard buttons
+    document.querySelectorAll('#authCategoryGrid > .swipe-item[data-group]').forEach(item => {
+      makeSwipeable(item, { rightWidth: 64 });
     });
-</script>
+    applyHiddenGroupsToStaticGrid();
+
+    resetAuthLock();
+    document.getElementById('authMasterPass')?.focus();
+  </script>
+
+  <!-- ===== Fingerprint / Face unlock (passkey) for Authenticator ===== -->
+  <script>
+  (function () {
+    const MAGIC = '__passkey__', CAT = 'totp';
+    const supported = !!(window.PublicKeyCredential && navigator.credentials);
+    if (!supported) return;
+    const enc = s => new TextEncoder().encode(s);
+    const b64u = buf => { let s = ''; new Uint8Array(buf).forEach(x => s += String.fromCharCode(x)); return btoa(s).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''); };
+    const unb64u = s => { s = s.replace(/-/g, '+').replace(/_/g, '/'); while (s.length % 4) s += '='; return Uint8Array.from(atob(s), c => c.charCodeAt(0)); };
+
+    async function post(path, body) {
+      const r = await fetch(API_BASE + path, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(d.error || ('Error ' + r.status));
+      return d;
+    }
+
+    // passkey token thakle password-er bodole oita dei
+    let pending = null;
+    const _apiLogin = apiLogin;
+    apiLogin = async function (category, password) {
+      if (password === MAGIC && category === CAT && pending) { const t = pending; pending = null; return t; }
+      return _apiLogin(category, password);
+    };
+
+    const css = document.createElement('style');
+    css.textContent = '.pk-btn{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;margin:12px 0 0;padding:12px;border-radius:50px;border:1px solid var(--border-strong);background:var(--cyan-soft);color:var(--text);font:inherit;font-size:.92rem;font-weight:600;cursor:pointer;transition:.2s}.pk-btn:hover{border-color:var(--cyan);transform:translateY(-2px)}';
+    document.head.appendChild(css);
+
+    let busy = false;
+    async function unlock() {
+      if (busy) return;
+      busy = true;
+      const errorEl = document.getElementById('authLockError');
+      try {
+        const o = await post('/passkey/login-options', { category: CAT });
+        let ids = Array.isArray(o.allow) ? o.allow.slice() : [];
+        try { const k = localStorage.getItem('pkCredId'); if (!ids.length && k) ids = [k]; } catch (_e) {}
+        const pub = { challenge: enc(o.challenge), rpId: o.rpId, userVerification: 'required', timeout: 60000 };
+        if (ids.length) pub.allowCredentials = ids.map(id => ({ type: 'public-key', id: unb64u(id), transports: ['internal'] }));
+        const cred = await navigator.credentials.get({ publicKey: pub });
+        try { localStorage.setItem('pkCredId', cred.id); } catch (_e) {}
+        const r = cred.response;
+        const d = await post('/passkey/login', {
+          category: CAT, id: cred.id,
+          clientDataJSON: b64u(r.clientDataJSON), authenticatorData: b64u(r.authenticatorData), signature: b64u(r.signature)
+        });
+        pending = d.token;
+        const f = document.getElementById('authMasterPass');
+        f.value = MAGIC;
+        authTryUnlock();
+        setTimeout(() => { if (f.value === MAGIC) f.value = ''; }, 10000);
+      } catch (e) {
+        const cancelled = e && (e.name === 'NotAllowedError' || e.name === 'AbortError');
+        if (errorEl) errorEl.textContent = cancelled ? 'Fingerprint/Face kaj kore ni. Password din.' : (e.message || 'Passkey error');
+      } finally { busy = false; }
+    }
+
+    const submit = document.getElementById('authSubmitBtn');
+    if (submit && !document.getElementById('authPasskeyBtn')) {
+      const b = document.createElement('button');
+      b.type = 'button'; b.id = 'authPasskeyBtn'; b.className = 'pk-btn';
+      b.innerHTML = '<i class="fa-solid fa-fingerprint"></i> Fingerprint / Face';
+      b.onclick = unlock;
+      submit.after(b);
+    }
+  })();
+  </script>
 </body>
 </html>
